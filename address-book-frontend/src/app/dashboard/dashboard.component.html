@@ -1,0 +1,30 @@
+<div class="dashboard">
+
+  <h1>CRM Dashboard</h1>
+
+  <div style="margin-bottom:20px;">
+    <button (click)="goToAddCustomer()" class="add-btn">
+      + Add Customer
+    </button>
+  </div>
+
+  <div class="cards">
+
+    <div class="card total">
+      <h3>Total Customers</h3>
+      <p>{{stats.total}}</p>
+    </div>
+
+    <div class="card new">
+      <h3>New Customers</h3>
+      <p>{{stats.new}}</p>
+    </div>
+
+    <div class="card existing">
+      <h3>Existing Customers</h3>
+      <p>{{stats.existing}}</p>
+    </div>
+
+  </div>
+
+</div>

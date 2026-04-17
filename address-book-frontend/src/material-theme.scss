@@ -1,0 +1,16 @@
+@use '@angular/material' as mat;
+
+/* Required core */
+@include mat.core();
+
+/* NEW Material 3 theme (correct way) */
+html {
+  @include mat.theme((
+    color: (
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}

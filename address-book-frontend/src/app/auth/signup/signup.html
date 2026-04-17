@@ -1,0 +1,72 @@
+<div class="login-wrapper">
+
+  <div class="bg"></div>
+
+  <div class="login-card">
+
+    <img src="assets/app-logo.png" class="logo" />
+
+    <h2>Create Account</h2>
+    <p class="subtitle">Join your CRM</p>
+
+    <input placeholder="Full Name" [(ngModel)]="name" />
+    <input placeholder="Email Address" [(ngModel)]="email" />
+
+    <select [(ngModel)]="company_id">
+      <option value="">Select Company</option>
+      <option value="1">Komal Chemiequip Pvt. Ltd.</option>
+      <option value="2">Arnav Agencies</option>
+    </select>
+
+    <input type="password" placeholder="Password" [(ngModel)]="password" />
+
+    <!-- 🔥 SINGLE CONTROL BLOCK (IMPORTANT) -->
+    <ng-container *ngIf="otpSent; else sendOtpBlock">
+
+      <!-- OTP SECTION -->
+      <div class="otp-box">
+        <input *ngFor="let _ of [0,1,2,3,4,5]; let i = index"
+              maxlength="1"
+              class="otp-input"
+              (keydown)="onOtpKeyDown($event, i)"
+              autocomplete="one-time-code"
+              inputmode="numeric" />
+      </div>
+
+      <div class="timer">
+        <span>Expires in {{timer}}s</span>
+        <button class="link-btn"
+                (click)="sendOtp()"
+                [disabled]="timer > 0">
+          Resend
+        </button>
+      </div>
+
+      <button class="primary-btn"
+              (click)="verifyOtp()"
+              *ngIf="!otpVerified"
+              [disabled]="loading">
+        <span *ngIf="!loading">Verify OTP</span>
+        <span *ngIf="loading" class="spinner"></span>
+      </button>
+
+    </ng-container>
+
+    <!-- SEND OTP BUTTON -->
+    <ng-template #sendOtpBlock>
+      <button class="primary-btn" (click)="sendOtp()" [disabled]="loading">
+        <span *ngIf="!loading">Send OTP</span>
+        <span *ngIf="loading" class="spinner"></span>
+      </button>
+    </ng-template>
+
+    <!-- REGISTER -->
+
+    <div class="auth-switch">
+      Already have an account?
+      <a routerLink="/login">Login</a>
+    </div>
+
+  </div>
+
+</div>

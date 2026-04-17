@@ -22,57 +22,65 @@ const transporter = nodemailer.createTransport({
 ================================ */
 router.post('/send-otp', (req, res) => {
 
-  const { email } = req.body;
+  const { email, company_id } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ message: 'Email required' });
+  if (!email || !company_id) {
+    return res.status(400).json({ message: 'Email and Company are required' });
   }
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min
-
-  const sql = `
-    INSERT INTO otp_verification (email, otp, expires_at)
-    VALUES (?, ?, ?)
-  `;
-
-  db.query(sql, [email, otp, expiresAt], (err) => {
-
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'DB error' });
+  const checkUserSql = `SELECT id FROM users WHERE email = ? AND company_id = ?`;
+  db.query(checkUserSql, [email, company_id], (err, users) => {
+    if (err) return res.status(500).json({ message: 'DB error' });
+    if (users.length > 0) {
+      return res.status(400).json({ message: 'Email is already registered' });
     }
 
-    /* ==============================
-       SEND EMAIL
-    ================================= */
-    const mailOptions = {
-      from: 'your-email@gmail.com',
-      to: email,
-      subject: 'Your OTP Code - AddressBook CRM',
-      html: `
-        <div style="font-family: Arial; text-align:center;">
-          <h2>🔐 OTP Verification</h2>
-          <p>Your OTP is:</p>
-          <h1 style="letter-spacing:5px;">${otp}</h1>
-          <p>This OTP will expire in 5 minutes.</p>
-        </div>
-      `
-    };
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min
 
-    transporter.sendMail(mailOptions, (error, info) => {
+    const sql = `
+      INSERT INTO otp_verification (email, otp, expires_at)
+      VALUES (?, ?, ?)
+    `;
 
-      if (error) {
-        console.error('EMAIL ERROR:', error);
-        return res.status(500).json({ message: 'Failed to send OTP' });
+    db.query(sql, [email, otp, expiresAt], (err) => {
+
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'DB error' });
       }
 
-      console.log('Email sent:', info.response);
+      /* ==============================
+         SEND EMAIL
+      ================================= */
+      const mailOptions = {
+        from: 'your-email@gmail.com',
+        to: email,
+        subject: 'Your OTP Code - AddressBook CRM',
+        html: `
+          <div style="font-family: Arial; text-align:center;">
+            <h2>🔐 OTP Verification</h2>
+            <p>Your OTP is:</p>
+            <h1 style="letter-spacing:5px;">${otp}</h1>
+            <p>This OTP will expire in 5 minutes.</p>
+          </div>
+        `
+      };
 
-      res.json({ message: 'OTP sent successfully' });
+      transporter.sendMail(mailOptions, (error, info) => {
+
+        if (error) {
+          console.error('EMAIL ERROR:', error);
+          return res.status(500).json({ message: 'Failed to send OTP' });
+        }
+
+        console.log('Email sent:', info.response);
+
+        res.json({ message: 'OTP sent successfully' });
+
+      });
 
     });
-
   });
 
 });

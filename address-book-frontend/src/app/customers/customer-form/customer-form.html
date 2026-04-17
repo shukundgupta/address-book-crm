@@ -1,0 +1,123 @@
+<div class="form-container">
+
+  <div class="form-card">
+
+    <h2>{{ isEdit ? 'Edit Customer' : 'Add Customer' }}</h2>
+
+    <!-- LOADING -->
+    <div *ngIf="loading">Loading...</div>
+
+    <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+
+      <div class="grid">
+
+        <!-- ATTN TITLE -->
+        <mat-form-field appearance="outline">
+          <mat-label>Attn.</mat-label>
+          <mat-select formControlName="title">
+            <mat-option value="Mr">Mr.</mat-option>
+            <mat-option value="Ms">Ms.</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- CONTACT PERSON -->
+        <mat-form-field appearance="outline">
+          <mat-label>Contact Person</mat-label>
+          <input matInput formControlName="contact_person">
+        </mat-form-field>
+
+        <!-- COMPANY NAME -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Company Name</mat-label>
+          <input matInput formControlName="company_name">
+        </mat-form-field>
+
+        <!-- CUSTOMER TYPE -->
+        <mat-form-field appearance="outline">
+          <mat-label>Customer Type</mat-label>
+          <mat-select formControlName="customer_type">
+            <mat-option value="New">New</mat-option>
+            <mat-option value="Existing">Existing</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- MOBILE -->
+        <mat-form-field appearance="outline">
+          <mat-label>Contact Number</mat-label>
+          <input matInput formControlName="contact_number">
+        </mat-form-field>
+
+        <!-- EMAIL -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email">
+        </mat-form-field>
+
+        <!-- ADDRESS -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Address</mat-label>
+          <textarea matInput formControlName="address" rows="3"></textarea>
+        </mat-form-field>
+
+        <!-- PINCODE -->
+        <mat-form-field appearance="outline">
+          <mat-label>Pincode</mat-label>
+          <input matInput formControlName="pincode" maxlength="6">
+        </mat-form-field>
+
+        <!-- STATE -->
+        <mat-form-field appearance="outline">
+          <mat-label>State</mat-label>
+
+          <!-- Dropdown -->
+          <mat-select *ngIf="states.length > 0" formControlName="state">
+            <mat-option *ngFor="let s of states" [value]="s">
+              {{ s }}
+            </mat-option>
+          </mat-select>
+
+          <!-- Manual -->
+          <input *ngIf="states.length === 0"
+                 matInput
+                 placeholder="Enter State"
+                 formControlName="state">
+        </mat-form-field>
+
+        <!-- CITY -->
+        <mat-form-field appearance="outline">
+          <mat-label>City</mat-label>
+
+          <!-- Dropdown -->
+          <mat-select *ngIf="cities.length > 0" formControlName="city">
+            <mat-option *ngFor="let c of cities" [value]="c">
+              {{ c }}
+            </mat-option>
+          </mat-select>
+
+          <!-- Manual -->
+          <input *ngIf="cities.length === 0"
+                 matInput
+                 placeholder="Enter City"
+                 formControlName="city">
+        </mat-form-field>
+
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="actions">
+
+        <button mat-raised-button color="primary" type="submit">
+          {{ isEdit ? 'Update Customer' : 'Save Customer' }}
+        </button>
+
+        <button mat-stroked-button color="warn" type="button" routerLink="/customers">
+          Cancel
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>

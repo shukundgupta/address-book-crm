@@ -1,0 +1,71 @@
+<div class="crm-container">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- COMPANY BRAND -->
+    <div class="sidebar-brand">
+      <img [src]="companyLogo" class="company-logo" />
+      <h2 class="company-name">{{ companyName }}</h2>
+    </div>
+
+    <nav>
+
+      <a [routerLink]="['/dashboard']"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="{ exact: true }">
+        Dashboard
+      </a>
+
+      <a [routerLink]="['/customers']" routerLinkActive="active">
+        Customers
+      </a>
+
+      <a [routerLink]="['/add-customer']" routerLinkActive="active">
+        Add Customer
+      </a>
+
+      <a [routerLink]="['/import']" routerLinkActive="active">
+        Import Contacts
+      </a>
+
+      <a [routerLink]="['/email']" routerLinkActive="active">
+        Email Campaign
+      </a>
+
+      <!-- LOGOUT -->
+      <a (click)="logout()" class="logout">
+        Logout
+      </a>
+
+    </nav>
+
+  </aside>
+
+
+  <!-- MAIN AREA -->
+  <div class="main-area">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+      <div class="title">
+        {{ companyName }} CRM
+      </div>
+
+      <div class="user">
+        <img [src]="companyLogo" class="top-logo" />
+        <span>{{ userEmail }}</span>
+      </div>
+
+    </header>
+
+
+    <!-- PAGE CONTENT -->
+    <div class="page">
+      <router-outlet></router-outlet>
+    </div>
+
+  </div>
+
+</div>

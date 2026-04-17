@@ -1,0 +1,148 @@
+<div class="container">
+
+  <h2>Customer List</h2>
+
+  <!-- =========================
+       TOP BAR (REFRESH + EXPORT)
+  ========================== -->
+  <div class="top-bar">
+
+    <!-- LEFT -->
+    <div class="left-actions">
+      <button class="btn btn-refresh" (click)="loadCustomers()">
+        ⟳ Refresh
+      </button>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-actions">
+      <button class="btn btn-export" (click)="exportToExcel()">
+        ⬇ Export
+      </button>
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       FILTER SECTION
+  ========================== -->
+  <div class="filter-box">
+
+    <!-- Company Name -->
+    <input type="text"
+           placeholder="Company Name"
+           [(ngModel)]="filter.company_name"
+           (input)="onFilterChange()">
+
+    <!-- State -->
+    <input type="text"
+           placeholder="State"
+           [(ngModel)]="filter.state"
+           (input)="onFilterChange()">
+
+    <!-- City -->
+    <input type="text"
+           placeholder="City"
+           [(ngModel)]="filter.city"
+           (input)="onFilterChange()">
+
+    <!-- Pincode -->
+    <input type="text"
+           placeholder="Pincode"
+           [(ngModel)]="filter.pincode"
+           (input)="onFilterChange()">
+
+    <!-- Customer Type -->
+    <select [(ngModel)]="filter.customer_type"
+            (change)="onFilterChange()">
+      <option value="">All Types</option>
+      <option value="New">New</option>
+      <option value="Existing">Existing</option>
+    </select>
+
+    <!-- Buttons -->
+    <button class="btn btn-search" (click)="search()">
+      🔍 Search
+    </button>
+
+    <button class="btn btn-clear" (click)="clearFilter()">
+      ✖ Clear
+    </button>
+
+  </div>
+
+
+  <!-- =========================
+       LOADING / EMPTY STATE
+  ========================== -->
+  <div *ngIf="loading">
+    Loading customers...
+  </div>
+
+  <div *ngIf="!loading && customers.length === 0">
+    No customers found.
+  </div>
+
+
+  <!-- =========================
+       CUSTOMER CARDS
+  ========================== -->
+  <div class="card-container">
+
+    <div class="customer-card"
+         *ngFor="let c of customers; let i = index">
+
+      <!-- HEADER -->
+      <div class="card-header">
+
+        <span>
+          Attn. {{c.title || 'Mr.'}} {{c.contact_person}}
+        </span>
+
+        <div class="header-right">
+
+          <!-- TAG -->
+          <span class="tag"
+                [ngClass]="{
+                  'tag-new': c.customer_type === 'New',
+                  'tag-existing': c.customer_type === 'Existing'
+                }">
+            {{c.customer_type}}
+          </span>
+
+          <!-- COPY -->
+          <button class="copy-all-btn"
+                  (click)="copyFullCustomer(c)">
+            📋 Copy
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- COMPANY -->
+      <div class="company">
+        M/s. {{c.company_name}}
+      </div>
+
+      <!-- ADDRESS -->
+      <div class="address" [innerHTML]="formatAddress(c)"></div>
+
+      <!-- CONTACT -->
+      <div class="contact">
+        <b>Mobile :</b> {{c.contact_number}} <br>
+        <b>Email :</b> {{c.email}}
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="card-actions">
+        <button class="btn-edit" (click)="editCustomer(c.id)">Edit</button>
+        <button class="btn-delete" (click)="deleteCustomer(c.id)">Delete</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
