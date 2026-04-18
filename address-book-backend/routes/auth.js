@@ -170,10 +170,10 @@ router.post('/register', async (req, res) => {
 ================================ */
 router.post('/login', (req, res) => {
 
-  const { email, password } = req.body;
+  const { email, password, company_id } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email & Password required' });
+  if (!email || !password || !company_id) {
+    return res.status(400).json({ message: 'Email, Password & Company required' });
   }
 
   const sql = `
@@ -183,10 +183,10 @@ router.post('/login', (req, res) => {
       c.logo AS company_logo
     FROM users u
     JOIN companies c ON u.company_id = c.id
-    WHERE u.email = ?
+    WHERE u.email = ? AND u.company_id = ?
   `;
 
-  db.query(sql, [email], async (err, result) => {
+  db.query(sql, [email, company_id], async (err, result) => {
 
     if (err) {
       console.error(err);

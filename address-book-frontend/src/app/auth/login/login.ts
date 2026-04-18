@@ -19,6 +19,7 @@ export class LoginComponent implements OnInit {
 
   email = '';
   password = '';
+  company_id: any = '';
   rememberMe = false;
 
   loading = false;
@@ -42,18 +43,35 @@ export class LoginComponent implements OnInit {
       this.router.navigate(['/dashboard']);
     }
 
-    // ✅ Load remembered email
+    // ✅ Load remembered email and company
     const savedEmail = localStorage.getItem('remember_email');
+    const savedCompany = localStorage.getItem('remember_company');
     if (savedEmail) {
       this.email = savedEmail;
       this.rememberMe = true;
     }
+    if (savedCompany) {
+      this.company_id = savedCompany;
+      this.onCompanyChange();
+    }
+  }
+
+  /* =========================
+     COMPANY CHANGE PREVIEW
+  ========================= */
+  onCompanyChange() {
+    this.setCompanyLogo(Number(this.company_id));
   }
 
   /* =========================
      LOGIN
   ========================= */
   login() {
+
+    if (!this.company_id) {
+      this.showError('Please select a company');
+      return;
+    }
 
     if (!this.email || !this.password) {
       this.showError('Please enter email & password');
@@ -64,7 +82,8 @@ export class LoginComponent implements OnInit {
 
     this.auth.login({
       email: this.email,
-      password: this.password
+      password: this.password,
+      company_id: this.company_id
     }).subscribe({
 
       next: (res: any) => {
@@ -77,11 +96,13 @@ export class LoginComponent implements OnInit {
         // ✅ Save user (for header branding later)
         localStorage.setItem('user', JSON.stringify(res.user));
 
-        // ✅ Remember email
+        // ✅ Remember email & company
         if (this.rememberMe) {
           localStorage.setItem('remember_email', this.email);
+          localStorage.setItem('remember_company', this.company_id);
         } else {
           localStorage.removeItem('remember_email');
+          localStorage.removeItem('remember_company');
         }
 
         // ✅ Dynamic logo based on company

@@ -44,13 +44,19 @@
         <!-- MOBILE -->
         <mat-form-field appearance="outline">
           <mat-label>Contact Number</mat-label>
-          <input matInput formControlName="contact_number">
+          <input matInput formControlName="contact_number" maxlength="10" inputmode="numeric" pattern="[0-9]*" (keypress)="allowNumbersOnly($event)">
+          <mat-error *ngIf="customerForm.get('contact_number')?.hasError('pattern')">
+            Must be exactly 10 digits
+          </mat-error>
         </mat-form-field>
 
         <!-- EMAIL -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Email</mat-label>
-          <input matInput formControlName="email">
+          <input matInput formControlName="email" type="email">
+          <mat-error *ngIf="customerForm.get('email')?.hasError('email')">
+            Please enter a valid email address
+          </mat-error>
         </mat-form-field>
 
         <!-- ADDRESS -->

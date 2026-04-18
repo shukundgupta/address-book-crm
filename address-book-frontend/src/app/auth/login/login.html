@@ -20,6 +20,12 @@
       [(ngModel)]="email"
     />
 
+    <select [(ngModel)]="company_id" (change)="onCompanyChange()">
+      <option value="">Select Company</option>
+      <option value="1">Komal Chemiequip Pvt. Ltd.</option>
+      <option value="2">Arnav Agencies</option>
+    </select>
+
     <input
       type="password"
       placeholder="Password"

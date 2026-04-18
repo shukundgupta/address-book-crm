@@ -33,7 +33,7 @@ export const routes: Routes = [
   {
     path: '',
     component: CrmLayoutComponent,
-    canActivate: [authGuard],   // 🔥 IMPORTANT
+    // canActivate: [authGuard],   // 🔥 IMPORTANT (Temporarily Disabled for Debugging)
     children: [
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

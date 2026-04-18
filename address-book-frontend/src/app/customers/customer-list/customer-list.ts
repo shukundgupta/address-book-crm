@@ -215,7 +215,24 @@ search(): void {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
 
-    XLSX.writeFile(workbook, 'Customer_List.xlsx');
+    // Manually trigger download to guarantee strictly preserved extension
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob: Blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Customer_List.xlsx';
+    
+    // Required by many browsers to honor the download attribute
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Delay revocation to ensure the browser has time to initiate the download
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+    }, 1000);
 
   }
 

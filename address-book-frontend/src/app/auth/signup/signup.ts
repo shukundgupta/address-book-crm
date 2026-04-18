@@ -71,9 +71,12 @@ export class Signup {
     },
 
     error: (err: any) => {
-      this.loading = false;
-      const msg = err?.error?.message || 'Failed to send OTP';
-      this.snack.open(msg, 'OK', { duration: 3000 });
+      this.zone.run(() => {
+        this.loading = false;
+        const msg = err?.error?.message || 'Failed to send OTP';
+        this.snack.open(msg, 'OK', { duration: 3000 });
+      });
+      this.cdr.detectChanges();
     }
 
   });
@@ -154,14 +157,18 @@ export class Signup {
     }).subscribe({
 
       next: () => {
+        clearInterval(this.interval); // Stop timer from firing detectChanges
         this.otpVerified = true;
         this.snack.open('OTP Verified', 'OK', { duration: 2000 });
         this.register();
       },
 
       error: () => {
-        this.loading = false;
-        this.snack.open('Invalid or expired OTP', 'OK', { duration: 2000 });
+        this.zone.run(() => {
+          this.loading = false;
+          this.snack.open('Invalid or expired OTP', 'OK', { duration: 2000 });
+        });
+        this.cdr.detectChanges();
       }
 
     });
@@ -183,7 +190,8 @@ export class Signup {
         // Automatically perform login instead of navigating to /login
         this.auth.login({
           email: this.email,
-          password: this.password
+          password: this.password,
+          company_id: this.company_id
         }).subscribe({
           next: (res: any) => {
             this.auth.saveToken(res.token);
@@ -201,8 +209,11 @@ export class Signup {
       },
 
       error: () => {
-        this.loading = false;
-        this.snack.open('Signup failed', 'OK', { duration: 2000 });
+        this.zone.run(() => {
+          this.loading = false;
+          this.snack.open('Signup failed', 'OK', { duration: 2000 });
+        });
+        this.cdr.detectChanges();
       }
 
     });

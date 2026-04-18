@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, OnInit, NgZone, ChangeDetectorRef } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { CustomerService } from '../customer';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -43,7 +43,9 @@ export class CustomerForm implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private http: HttpClient
+    private http: HttpClient,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
 
     this.customerForm = this.fb.group({
@@ -54,11 +56,24 @@ export class CustomerForm implements OnInit {
       state: [''],
       city: [''],
       pincode: [''],
-      email: [''],
+      email: ['', [Validators.email]],
       contact_person: [''],
-      contact_number: ['']
+      contact_number: ['', [Validators.pattern('^[0-9]{10}$')]]
     });
 
+  }
+
+  /* =========================
+     ALLOW NUMBERS ONLY
+  ========================= */
+  allowNumbersOnly(event: any): boolean {
+    const charCode = (event.which) ? event.which : event.keyCode;
+    // Only allow numbers 0-9
+    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+      event.preventDefault();
+      return false;
+    }
+    return true;
   }
 
   /* =========================
@@ -177,11 +192,13 @@ export class CustomerForm implements OnInit {
 
       error: () => {
 
-        this.loading = false;
-
-        this.snackBar.open('Error loading customer', 'Close', {
-          duration: 3000
+        this.zone.run(() => {
+          this.loading = false;
+          this.snackBar.open('Error loading customer', 'Close', {
+            duration: 3000
+          });
         });
+        this.cdr.detectChanges();
 
       }
 
@@ -196,26 +213,38 @@ export class CustomerForm implements OnInit {
 
     if (this.isEdit && this.customerId) {
 
-      this.service.update(this.customerId, this.customerForm.value).subscribe(() => {
-
-        this.snackBar.open('Customer updated successfully', 'Close', {
-          duration: 3000
-        });
-
-        this.router.navigate(['/customers']);
-
+      this.service.update(this.customerId, this.customerForm.value).subscribe({
+        next: () => {
+          this.zone.run(() => {
+            this.snackBar.open('Customer updated successfully', 'Close', { duration: 3000 });
+            this.router.navigate(['/customers']);
+          });
+        },
+        error: (err) => {
+          this.zone.run(() => {
+            this.loading = false;
+            this.snackBar.open('Failed to update customer', 'Close', { duration: 3000 });
+          });
+          this.cdr.detectChanges();
+        }
       });
 
     } else {
 
-      this.service.create(this.customerForm.value).subscribe(() => {
-
-        this.snackBar.open('Customer saved successfully', 'Close', {
-          duration: 3000
-        });
-
-        this.router.navigate(['/customers']);
-
+      this.service.create(this.customerForm.value).subscribe({
+        next: () => {
+          this.zone.run(() => {
+            this.snackBar.open('Customer saved successfully', 'Close', { duration: 3000 });
+            this.router.navigate(['/customers']);
+          });
+        },
+        error: (err) => {
+          this.zone.run(() => {
+            this.loading = false;
+            this.snackBar.open('Failed to save customer', 'Close', { duration: 3000 });
+          });
+          this.cdr.detectChanges();
+        }
       });
 
     }
@@ -255,7 +284,11 @@ export class CustomerForm implements OnInit {
       },
 
       error: () => {
-        this.loading = false;
+        this.zone.run(() => {
+          this.loading = false;
+          this.snackBar.open('Network error checking duplicate', 'Close', { duration: 3000 });
+        });
+        this.cdr.detectChanges();
       }
 
     });

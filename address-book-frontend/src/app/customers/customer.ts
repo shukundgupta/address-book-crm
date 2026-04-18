@@ -22,9 +22,9 @@ export class CustomerService {
     return this.http.post<any>(this.api, data);
   }
 
-   /* CHECK DUPLICATE ENTRY */
+  /* CHECK DUPLICATE ENTRY */
   checkDuplicate(name: string) {
-    return this.http.get<any>(`${this.api}/check-duplicate/${name}`);
+    return this.http.get<any>(`${this.api}/check-duplicate?name=${encodeURIComponent(name)}`);
   }
 
   /* SEARCH */

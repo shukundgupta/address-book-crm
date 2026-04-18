@@ -83,6 +83,14 @@ router.post('/', (req, res) => {
     title
   } = req.body;
 
+  if (contact_number && !/^\d{10}$/.test(contact_number)) {
+    return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Invalid email format' });
+  }
+
   const query = `
     INSERT INTO customers
     (company_id, title, company_name, customer_type, address, state, city, pincode, email, contact_person, contact_number)
@@ -228,6 +236,14 @@ router.put('/:id', (req, res) => {
     contact_number,
     title
   } = req.body;
+
+  if (contact_number && !/^\d{10}$/.test(contact_number)) {
+    return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Invalid email format' });
+  }
 
   const sql = `
     UPDATE customers
