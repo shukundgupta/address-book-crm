@@ -11,6 +11,65 @@ router.use(auth);
 
 
 /* ==============================
+   EXPORT CUSTOMERS AS CSV
+================================ */
+router.get('/export', (req, res) => {
+
+  const company_id = req.user.company_id;
+
+  const sql = `SELECT * FROM customers WHERE company_id = ? ORDER BY id DESC`;
+
+  db.query(sql, [company_id], (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Export failed' });
+    }
+
+    // Build 2-column CSV (same layout as original Excel: Customer 1 in col A, Customer 2 in col B)
+    const escape = (val) => `"${(String(val || '')).replace(/"/g, '""')}"`;
+
+    let csvRows = [];
+
+    for (let i = 0; i < rows.length; i += 2) {
+      const c1 = rows[i];
+      const c2 = rows[i + 1];
+
+      const buildBlock = (c) => {
+        if (!c) return [];
+        const addressLines = (c.address || '').split('\n');
+        return [
+          `Attn. ${c.title || 'Mr.'} ${c.contact_person || ''}`,
+          `M/s. ${c.company_name || ''}`,
+          ...addressLines,
+          `${c.city || ''} ${c.pincode || ''}`,
+          `Mobile : ${c.contact_number || ''}`,
+          `Email : ${c.email || ''}`
+        ];
+      };
+
+      const b1 = buildBlock(c1);
+      const b2 = buildBlock(c2);
+      const maxLen = Math.max(b1.length, b2.length);
+
+      for (let j = 0; j < maxLen; j++) {
+        csvRows.push(`${escape(b1[j] || '')},${escape(b2[j] || '')}`);
+      }
+      csvRows.push(','); // blank separator row
+    }
+
+    // UTF-8 BOM so Excel opens correctly
+    const bom = '\uFEFF';
+    const csvContent = bom + csvRows.join('\r\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="Customer_List.csv"');
+    res.send(csvContent);
+  });
+
+});
+
+
+/* ==============================
    GET ALL CUSTOMERS
 ================================ */
 router.get('/', (req, res) => {

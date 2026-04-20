@@ -119,7 +119,12 @@ export class LoginComponent implements OnInit {
 
         this.loading = false;
 
-        const msg = err?.error?.message || 'Login failed';
+        let msg = err?.error?.message || 'Login failed';
+        
+        if (err.status === 0) {
+          msg = 'Please start the server & npm start';
+        }
+
         this.showError(msg);
       }
 

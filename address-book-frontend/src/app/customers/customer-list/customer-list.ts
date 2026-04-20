@@ -2,7 +2,6 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CustomerService } from '../customer';
-import * as XLSX from 'xlsx';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
@@ -157,84 +156,21 @@ search(): void {
   }
 
   /* =========================
-     EXPORT (2 COLUMN FORMAT)
+     EXPORT — backend-driven download
   ========================= */
   exportToExcel(): void {
 
     if (!this.customers.length) {
-      alert('No data available');
+      alert('No data to export.');
       return;
     }
 
-    let excelData: any[] = [];
-
-    for (let i = 0; i < this.customers.length; i += 2) {
-
-      const c1 = this.customers[i];
-      const c2 = this.customers[i + 1];
-
-      const buildBlock = (c: any) => {
-
-        if (!c) return [];
-
-        const addressLines = (c.address || '').split('\n');
-
-        return [
-          `Attn. ${c.title || 'Mr.'} ${c.contact_person || ''}`,
-          `M/s. ${c.company_name || ''}`,
-          ...addressLines,
-          `${c.city || ''} ${c.pincode || ''}`,
-          `Mobile : ${c.contact_number || ''}`,
-          `Email : ${c.email || ''}`
-        ];
-      };
-
-      const block1 = buildBlock(c1);
-      const block2 = buildBlock(c2);
-
-      const maxLines = Math.max(block1.length, block2.length);
-
-      for (let j = 0; j < maxLines; j++) {
-        excelData.push({
-          A: block1[j] || '',
-          B: block2[j] || ''
-        });
-      }
-
-      // blank row between customers
-      excelData.push({ A: '', B: '' });
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(excelData, { skipHeader: true });
-
-    worksheet['!cols'] = [
-      { wch: 45 },
-      { wch: 45 }
-    ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
-
-    // Manually trigger download to guarantee strictly preserved extension
-    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob: Blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Customer_List.xlsx';
-    
-    // Required by many browsers to honor the download attribute
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    // Delay revocation to ensure the browser has time to initiate the download
-    setTimeout(() => {
-      window.URL.revokeObjectURL(url);
-    }, 1000);
+    // Open the backend export URL — browser downloads it natively as a file
+    const exportUrl = 'http://localhost:3000/api/customers/export';
+    window.open(exportUrl, '_blank');
 
   }
+
 
    /* =========================
      RANDOM UI CARD COLOR
