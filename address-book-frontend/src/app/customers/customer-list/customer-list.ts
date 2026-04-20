@@ -156,7 +156,7 @@ search(): void {
   }
 
   /* =========================
-     EXPORT — backend-driven download
+     EXPORT — backend-driven download (.xlsx)
   ========================= */
   exportToExcel(): void {
 
@@ -165,7 +165,7 @@ search(): void {
       return;
     }
 
-    // Open the backend export URL — browser downloads it natively as a file
+    // Opens backend export URL — browser downloads a proper .xlsx file
     const exportUrl = 'http://localhost:3000/api/customers/export';
     window.open(exportUrl, '_blank');
 

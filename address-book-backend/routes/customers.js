@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const ExcelJS = require('exceljs');
 
 const db = require('../config/db');
 const auth = require('../middleware/authMiddleware'); // ✅ only one
@@ -13,26 +14,28 @@ router.use(auth);
 /* ==============================
    EXPORT CUSTOMERS AS CSV
 ================================ */
-router.get('/export', (req, res) => {
+router.get('/export', async (req, res) => {
 
   const company_id = req.user.company_id;
 
   const sql = `SELECT * FROM customers WHERE company_id = ? ORDER BY id DESC`;
 
-  db.query(sql, [company_id], (err, rows) => {
+  db.query(sql, [company_id], async (err, rows) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ message: 'Export failed' });
     }
 
-    // Build 2-column CSV (same layout as original Excel: Customer 1 in col A, Customer 2 in col B)
-    const escape = (val) => `"${(String(val || '')).replace(/"/g, '""')}"`;
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Customer List');
 
-    let csvRows = [];
-
-    for (let i = 0; i < rows.length; i += 2) {
-      const c1 = rows[i];
-      const c2 = rows[i + 1];
+      // ✅ Set column widths wide enough so nothing is cut off
+      sheet.columns = [
+        { key: 'A', width: 45 },
+        { key: 'B', width: 5  }, // spacer column
+        { key: 'C', width: 45 },
+      ];
 
       const buildBlock = (c) => {
         if (!c) return [];
@@ -47,23 +50,36 @@ router.get('/export', (req, res) => {
         ];
       };
 
-      const b1 = buildBlock(c1);
-      const b2 = buildBlock(c2);
-      const maxLen = Math.max(b1.length, b2.length);
+      for (let i = 0; i < rows.length; i += 2) {
+        const b1 = buildBlock(rows[i]);
+        const b2 = buildBlock(rows[i + 1]);
+        const maxLen = Math.max(b1.length, b2.length);
 
-      for (let j = 0; j < maxLen; j++) {
-        csvRows.push(`${escape(b1[j] || '')},${escape(b2[j] || '')}`);
+        for (let j = 0; j < maxLen; j++) {
+          const row = sheet.addRow([b1[j] || '', '', b2[j] || '']);
+
+          // Style: left-align, wrap text
+          ['A', 'B', 'C'].forEach(col => {
+            const cell = row.getCell(col);
+            cell.alignment = { horizontal: 'left', wrapText: true };
+          });
+        }
+
+        // Blank separator row between customer pairs
+        sheet.addRow([]);
       }
-      csvRows.push(','); // blank separator row
+
+      // Send as .xlsx
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename="Customer_List.xlsx"');
+
+      await workbook.xlsx.write(res);
+      res.end();
+
+    } catch (excelErr) {
+      console.error(excelErr);
+      res.status(500).json({ message: 'Excel generation failed' });
     }
-
-    // UTF-8 BOM so Excel opens correctly
-    const bom = '\uFEFF';
-    const csvContent = bom + csvRows.join('\r\n');
-
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="Customer_List.csv"');
-    res.send(csvContent);
   });
 
 });
