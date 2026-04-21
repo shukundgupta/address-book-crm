@@ -1,0 +1,606 @@
+<!-- ===================================================
+     EMAIL CAMPAIGN PAGE
+==================================================== -->
+
+<div class="ec-page">
+
+  <!-- PAGE HEADER -->
+  <div class="ec-header">
+    <div class="ec-header-left">
+      <div class="ec-icon">✉️</div>
+      <div>
+        <h1 class="ec-title">Email Campaign</h1>
+        <p class="ec-subtitle">Design & send promotional emails with A4 template</p>
+      </div>
+    </div>
+    <div class="ec-tabs">
+      <button class="ec-tab" [class.active]="activeTab === 'compose'"
+        (click)="activeTab = 'compose'">
+        ✍️ Compose
+      </button>
+      <button class="ec-tab" [class.active]="activeTab === 'preview'"
+        (click)="activeTab = 'preview'; updatePreview()">
+        👁️ Preview
+      </button>
+      <button class="ec-tab" [class.active]="activeTab === 'history'"
+        (click)="activeTab = 'history'; loadHistory()">
+        📋 History
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================================================
+       TAB: COMPOSE
+  ==================================================== -->
+  <div *ngIf="activeTab === 'compose'" class="ec-compose">
+
+    <!-- SEND RESULT BANNER -->
+    <div *ngIf="sendResult" class="ec-banner ec-banner-success">
+      <span class="banner-icon">🚀</span>
+      <div>
+        <strong>Campaign Started!</strong>
+        <p>Sending to <b>{{ sendResult.totalRecipients }}</b> recipients individually (one by one).
+          Est. time: <b>~{{ sendResult.estimatedMinutes }} min</b>.
+          Campaign ID: #{{ sendResult.campaignId }}
+        </p>
+      </div>
+      <button class="banner-close" (click)="sendResult = null">✕</button>
+    </div>
+
+    <div *ngIf="sendError" class="ec-banner ec-banner-error">
+      <span class="banner-icon">⚠️</span>
+      <span>{{ sendError }}</span>
+      <button class="banner-close" (click)="sendError = ''">✕</button>
+    </div>
+
+    <!-- ====  TWO COLUMN LAYOUT ==== -->
+    <div class="compose-layout">
+
+      <!-- LEFT: EDITOR -->
+      <div class="compose-left">
+
+        <!-- CAMPAIGN META -->
+        <div class="ec-card">
+          <h3 class="card-title">📝 Campaign Details</h3>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Campaign Name *</label>
+              <input type="text" [(ngModel)]="campaign.campaign_name"
+                placeholder="e.g. Summer Sale 2025" class="ec-input" />
+            </div>
+            <div class="form-group">
+              <label>From Name</label>
+              <input type="text" [(ngModel)]="campaign.from_name"
+                placeholder="Your Company Name" class="ec-input" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email Subject *</label>
+            <input type="text" [(ngModel)]="campaign.subject"
+              placeholder="Enter compelling subject line..." class="ec-input" />
+          </div>
+        </div>
+
+        <!-- ============================================
+             TEMPLATE DESIGNER (A4)
+        ============================================= -->
+        <div class="ec-card template-card">
+          <div class="template-card-header">
+            <h3 class="card-title">🎨 A4 Email Template</h3>
+            <div class="template-color-row">
+              <label class="color-label">Brand Color:</label>
+              <input type="color" [(ngModel)]="campaign.template_color"
+                class="brand-color-picker" title="Header/Footer color" />
+              <span class="color-hex">{{ campaign.template_color }}</span>
+              <button class="tb-btn" (click)="activeTab = 'preview'; updatePreview()" style="margin-left:8px;">
+                👁️ Preview A4
+              </button>
+            </div>
+          </div>
+
+          <!-- HEADER EDITOR -->
+          <div class="template-section-label">
+            <span class="section-badge header-badge">HEADER</span>
+            <span class="section-desc">Fixed top — appears on every email (logo, company name)</span>
+          </div>
+          <div class="toolbar-strip template-toolbar">
+            <button class="tb-btn" (click)="execInFrame('headerFrame', 'bold')" title="Bold"><b>B</b></button>
+            <button class="tb-btn" (click)="execInFrame('headerFrame', 'italic')" title="Italic"><i>I</i></button>
+            <button class="tb-btn" (click)="execInFrame('headerFrame', 'underline')" title="Underline"><u>U</u></button>
+            <div class="tb-sep"></div>
+            <button class="tb-btn" (click)="execInFrame('headerFrame', 'justifyLeft')" title="Left">⬅</button>
+            <button class="tb-btn" (click)="execInFrame('headerFrame', 'justifyCenter')" title="Center">☰</button>
+            <button class="tb-btn" (click)="execInFrame('headerFrame', 'justifyRight')" title="Right">➡</button>
+            <div class="tb-sep"></div>
+            <button class="tb-btn" title="Insert Logo" (click)="openHeaderImageDialog()">🖼️ Logo</button>
+            <div class="tb-sep"></div>
+            <button class="tb-btn" (click)="applyHeaderTemplate()" title="Apply default header template">✨ Default Template</button>
+          </div>
+          <iframe #headerFrame class="template-frame header-frame" title="Header editor" frameborder="0"></iframe>
+
+          <!-- BODY EDITOR -->
+          <div class="template-section-label">
+            <span class="section-badge body-badge">BODY</span>
+            <span class="section-desc">Changeable content — unique per campaign</span>
+          </div>
+
+          <!-- TOOLBAR ROW 1: Font -->
+          <div class="toolbar-strip">
+            <select class="tb-select" [(ngModel)]="currentFontFamily"
+              (change)="setFontFamily(currentFontFamily)" title="Font Family">
+              <option value="Arial">Arial</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Tahoma">Tahoma</option>
+              <option value="Trebuchet MS">Trebuchet MS</option>
+            </select>
+
+            <select class="tb-select tb-size" [(ngModel)]="currentFontSize"
+              (change)="setFontSize(currentFontSize)" title="Font Size">
+              <option value="10px">10</option>
+              <option value="12px">12</option>
+              <option value="14px">14</option>
+              <option value="16px">16</option>
+              <option value="18px">18</option>
+              <option value="20px">20</option>
+              <option value="24px">24</option>
+              <option value="28px">28</option>
+              <option value="36px">36</option>
+              <option value="48px">48</option>
+            </select>
+
+            <div class="tb-sep"></div>
+
+            <button class="tb-btn" (click)="exec('bold')" title="Bold"><b>B</b></button>
+            <button class="tb-btn" (click)="exec('italic')" title="Italic"><i>I</i></button>
+            <button class="tb-btn" (click)="exec('underline')" title="Underline"><u>U</u></button>
+            <button class="tb-btn" (click)="exec('strikeThrough')" title="Strikethrough"><s>S</s></button>
+
+            <div class="tb-sep"></div>
+
+            <!-- Text Color -->
+            <div class="tb-color-wrap" title="Text Color">
+              <button class="tb-btn" (click)="showColorPicker = !showColorPicker">
+                <span class="color-a" [style.borderBottom]="'3px solid ' + currentColor">A</span>
+              </button>
+              <div *ngIf="showColorPicker" class="color-palette">
+                <span *ngFor="let c of ['#000000','#434343','#cc0000','#e06666','#ff9900',
+                  '#ffd966','#38761d','#00ff00','#274e13','#1155cc','#6fa8dc','#0000ff',
+                  '#352a87','#741b47','#c27ba0','#ffffff']"
+                  class="color-swatch" [style.background]="c"
+                  (click)="setColor(c)"></span>
+              </div>
+            </div>
+
+            <!-- Highlight Color -->
+            <div class="tb-color-wrap" title="Highlight Color">
+              <button class="tb-btn" (click)="showBgColorPicker = !showBgColorPicker">
+                🖌️
+              </button>
+              <div *ngIf="showBgColorPicker" class="color-palette">
+                <span *ngFor="let c of ['#ffff00','#00ff00','#00ffff','#ff00ff','#ff9900',
+                  '#ff0000','#0000ff','#ffffff','#efefef','#cccccc','#999999','#666666',
+                  '#333333','#000000','#fce5cd','#d9ead3']"
+                  class="color-swatch" [style.background]="c"
+                  (click)="setBgColor(c)"></span>
+              </div>
+            </div>
+
+            <div class="tb-sep"></div>
+
+            <button class="tb-btn" (click)="alignLeft()" title="Align Left">⬅</button>
+            <button class="tb-btn" (click)="alignCenter()" title="Center">☰</button>
+            <button class="tb-btn" (click)="alignRight()" title="Align Right">➡</button>
+            <button class="tb-btn" (click)="alignJustify()" title="Justify">≡</button>
+          </div>
+
+          <!-- TOOLBAR ROW 2: Insert -->
+          <div class="toolbar-strip toolbar-strip-2">
+            <button class="tb-btn" (click)="insertBulletList()" title="Bullet List">• List</button>
+            <button class="tb-btn" (click)="insertNumberedList()" title="Numbered List">1. List</button>
+
+            <div class="tb-sep"></div>
+
+            <button class="tb-btn" (click)="exec('indent')" title="Indent">→ Tab</button>
+            <button class="tb-btn" (click)="exec('outdent')" title="Outdent">← Tab</button>
+
+            <div class="tb-sep"></div>
+
+            <button class="tb-btn" (click)="exec('formatBlock','H1')" title="Heading 1">H1</button>
+            <button class="tb-btn" (click)="exec('formatBlock','H2')" title="Heading 2">H2</button>
+            <button class="tb-btn" (click)="exec('formatBlock','H3')" title="Heading 3">H3</button>
+            <button class="tb-btn" (click)="exec('formatBlock','P')" title="Paragraph">¶</button>
+            <button class="tb-btn" (click)="exec('formatBlock','BLOCKQUOTE')" title="Quote">❝</button>
+
+            <div class="tb-sep"></div>
+
+            <button class="tb-btn" (click)="insertHR()" title="Horizontal Line">── HR</button>
+
+            <!-- Table -->
+            <div class="tb-table-wrap">
+              <button class="tb-btn" (click)="showTablePicker = !showTablePicker" title="Insert Table">⊞ Table</button>
+              <div *ngIf="showTablePicker" class="table-picker-popover">
+                <label>Rows: <input type="number" [(ngModel)]="tableRows" min="1" max="20" class="tiny-input" /></label>
+                <label>Cols: <input type="number" [(ngModel)]="tableCols" min="1" max="10" class="tiny-input" /></label>
+                <button class="tb-insert-btn" (click)="insertTable()">Insert Table</button>
+              </div>
+            </div>
+
+            <!-- Link -->
+            <div class="tb-link-wrap">
+              <button class="tb-btn" (click)="openLinkDialog()" title="Insert Link">🔗 Link</button>
+              <div *ngIf="showLinkDialog" class="link-popover">
+                <input type="text" [(ngModel)]="linkText" placeholder="Link Text" class="ec-input" />
+                <input type="url" [(ngModel)]="linkUrl" placeholder="https://..." class="ec-input" />
+                <div class="popover-actions">
+                  <button class="tb-insert-btn" (click)="insertLink()">Insert</button>
+                  <button class="tb-cancel-btn" (click)="showLinkDialog = false">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Image -->
+            <div class="tb-img-wrap">
+              <button class="tb-btn" (click)="openImageDialog()" title="Insert Image">🖼️ Image</button>
+              <div *ngIf="showImageDialog" class="link-popover">
+                <input type="url" [(ngModel)]="imageUrl" placeholder="Image URL (https://...)" class="ec-input" />
+                <div class="popover-actions">
+                  <button class="tb-insert-btn" (click)="insertImage()">Insert</button>
+                  <button class="tb-cancel-btn" (click)="showImageDialog = false">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="tb-sep"></div>
+
+            <button class="tb-btn" (click)="exec('superscript')" title="Superscript">x²</button>
+            <button class="tb-btn" (click)="exec('subscript')" title="Subscript">x₂</button>
+
+            <div class="tb-sep"></div>
+
+            <button class="tb-btn" (click)="exec('undo')" title="Undo">↩</button>
+            <button class="tb-btn" (click)="exec('redo')" title="Redo">↪</button>
+
+            <button class="tb-btn tb-btn-danger" (click)="clearEditor()" title="Clear All">🗑️ Clear</button>
+          </div>
+
+          <!-- BODY IFRAME EDITOR -->
+          <iframe #editorFrame class="rich-editor-frame"
+            title="Email body editor"
+            frameborder="0">
+          </iframe>
+
+          <!-- TEMPLATE VARIABLES -->
+          <div class="variable-bar">
+            <span class="var-label">Insert Variable:</span>
+            <button class="var-btn" (click)="insertVariable('{{company_name}}')">Company Name</button>
+            <button class="var-btn" (click)="insertVariable('{{contact_person}}')">Contact Person</button>
+            <button class="var-btn" (click)="insertVariable('{{city}}')">City</button>
+            <button class="var-btn" (click)="insertVariable('{{state}}')">State</button>
+          </div>
+
+          <!-- FOOTER EDITOR -->
+          <div class="template-section-label" style="margin-top:12px;">
+            <span class="section-badge footer-badge">FOOTER</span>
+            <span class="section-desc">Fixed bottom — company address, social links, etc.</span>
+          </div>
+          <div class="toolbar-strip template-toolbar">
+            <button class="tb-btn" (click)="execInFrame('footerFrame', 'bold')" title="Bold"><b>B</b></button>
+            <button class="tb-btn" (click)="execInFrame('footerFrame', 'italic')" title="Italic"><i>I</i></button>
+            <button class="tb-btn" (click)="execInFrame('footerFrame', 'underline')" title="Underline"><u>U</u></button>
+            <div class="tb-sep"></div>
+            <button class="tb-btn" (click)="execInFrame('footerFrame', 'justifyLeft')" title="Left">⬅</button>
+            <button class="tb-btn" (click)="execInFrame('footerFrame', 'justifyCenter')" title="Center">☰</button>
+            <button class="tb-btn" (click)="execInFrame('footerFrame', 'justifyRight')" title="Right">➡</button>
+            <div class="tb-sep"></div>
+            <button class="tb-btn" (click)="applyFooterTemplate()" title="Apply default footer">✨ Default Template</button>
+          </div>
+          <iframe #footerFrame class="template-frame footer-frame" title="Footer editor" frameborder="0"></iframe>
+
+        </div>
+
+      </div>
+
+      <!-- RIGHT: SETTINGS PANEL -->
+      <div class="compose-right">
+
+        <!-- INDIVIDUAL SENDING INFO -->
+        <div class="ec-card info-card">
+          <h3 class="card-title">✉️ Individual Sending</h3>
+          <ul class="info-list">
+            <li>👤 <b>1 email</b> per recipient</li>
+            <li>⏱️ <b>3 sec</b> gap between each</li>
+            <li>🔄 Runs <b>in background</b></li>
+            <li>🎯 <b>Personalised</b> per customer</li>
+            <li>📊 Track in <b>History</b> tab</li>
+            <li>✅ Per-recipient delivery logs</li>
+          </ul>
+        </div>
+
+        <!-- RECIPIENT FILTER -->
+        <div class="ec-card">
+          <h3 class="card-title">🎯 Recipients</h3>
+
+          <div class="form-group">
+            <label>Send To</label>
+            <select [(ngModel)]="campaign.filter_type"
+              (change)="onFilterTypeChange()" class="ec-input">
+              <option value="all">All Customers</option>
+              <option value="state">By State</option>
+              <option value="city">By City</option>
+              <option value="pincode">By Pincode</option>
+            </select>
+          </div>
+
+          <div *ngIf="campaign.filter_type === 'state'" class="form-group">
+            <label>Select State</label>
+            <select [(ngModel)]="campaign.filter_value" class="ec-input">
+              <option value="">-- Select State --</option>
+              <option *ngFor="let s of filterOptions.states" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+
+          <div *ngIf="campaign.filter_type === 'city'" class="form-group">
+            <label>Select City</label>
+            <select [(ngModel)]="campaign.filter_value" class="ec-input">
+              <option value="">-- Select City --</option>
+              <option *ngFor="let c of filterOptions.cities" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <div *ngIf="campaign.filter_type === 'pincode'" class="form-group">
+            <label>Select Pincode</label>
+            <select [(ngModel)]="campaign.filter_value" class="ec-input">
+              <option value="">-- Select Pincode --</option>
+              <option *ngFor="let p of filterOptions.pincodes" [value]="p">{{ p }}</option>
+            </select>
+          </div>
+
+          <button class="ec-btn ec-btn-outline w-full"
+            (click)="previewRecipients()"
+            [disabled]="previewLoading">
+            <span *ngIf="previewLoading" class="spin">⟳</span>
+            {{ previewLoading ? 'Checking...' : '🔍 Check Recipients' }}
+          </button>
+
+          <!-- PREVIEW RESULT -->
+          <div *ngIf="preview" class="preview-box">
+            <div class="preview-stat">
+              <div class="preview-number">{{ preview.total }}</div>
+              <div class="preview-label">Total Emails</div>
+            </div>
+            <div class="preview-stat">
+              <div class="preview-number">~{{ preview.estimatedMinutes || 0 }}m</div>
+              <div class="preview-label">Est. Time</div>
+            </div>
+            <div *ngIf="preview.sample?.length" class="preview-sample">
+              <div class="sample-title">Preview Recipients:</div>
+              <div *ngFor="let r of preview.sample" class="sample-item">
+                <span>📧</span> {{ r.email }} · {{ r.company_name || 'N/A' }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="action-btns">
+          <button class="ec-btn ec-btn-secondary w-full"
+            (click)="activeTab = 'preview'; updatePreview()">
+            👁️ Preview A4 Template
+          </button>
+
+          <button class="ec-btn ec-btn-primary w-full"
+            (click)="sendCampaign()"
+            [disabled]="sending">
+            <span *ngIf="sending" class="spin">⟳</span>
+            {{ sending ? 'Launching Campaign...' : '🚀 Send Campaign' }}
+          </button>
+
+          <button class="ec-btn ec-btn-ghost w-full" (click)="resetForm()">
+            🔄 Reset Form
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ===================================================
+       TAB: A4 PREVIEW
+  ==================================================== -->
+  <div *ngIf="activeTab === 'preview'" class="ec-preview-tab">
+    <div class="preview-tab-header">
+      <h3>📄 A4 Email Preview</h3>
+      <p class="preview-hint">This is how your email will look in the recipient's inbox</p>
+      <button class="ec-btn ec-btn-outline" (click)="activeTab = 'compose'">← Back to Editor</button>
+    </div>
+
+    <div class="a4-preview-container">
+      <div class="a4-sheet" [style.--accent]="campaign.template_color">
+
+        <!-- HEADER ZONE -->
+        <div class="a4-header-zone" [style.background]="campaign.template_color">
+          <div class="a4-header-content" [innerHTML]="previewHeaderHtml"></div>
+        </div>
+
+        <!-- BODY ZONE -->
+        <div class="a4-body-zone">
+          <div class="a4-body-content" [innerHTML]="previewBodyHtml"></div>
+        </div>
+
+        <!-- FOOTER ZONE -->
+        <div class="a4-footer-zone" [style.background]="campaign.template_color">
+          <div class="a4-footer-content" [innerHTML]="previewFooterHtml"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================
+       TAB: HISTORY
+  ==================================================== -->
+  <div *ngIf="activeTab === 'history'" class="ec-history">
+
+    <div class="history-header">
+      <h3>📋 Campaign History</h3>
+      <button class="ec-btn ec-btn-outline" (click)="loadHistory()">🔄 Refresh</button>
+    </div>
+
+    <div *ngIf="historyLoading" class="ec-loading">
+      <div class="loader-ring"></div> Loading campaigns...
+    </div>
+
+    <div *ngIf="!historyLoading && history.length === 0" class="ec-empty">
+      <div class="empty-icon">📭</div>
+      <p>No campaigns sent yet. Go to <b>Compose</b> to send your first campaign!</p>
+    </div>
+
+    <div *ngIf="!historyLoading && history.length > 0" class="history-table-wrap">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Campaign Name</th>
+            <th>Subject</th>
+            <th>Filter</th>
+            <th>Recipients</th>
+            <th>Sent</th>
+            <th>Failed</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of history">
+            <td><b>#{{ c.id }}</b></td>
+            <td>{{ c.campaign_name }}</td>
+            <td class="subject-cell">{{ c.subject }}</td>
+            <td>
+              <span class="filter-badge">
+                {{ c.filter_type === 'all' ? 'All' : c.filter_type + ': ' + c.filter_value }}
+              </span>
+            </td>
+            <td><b>{{ c.total_recipients }}</b></td>
+            <td class="sent-cell">{{ c.sent_count }}</td>
+            <td class="failed-cell">{{ c.failed_count }}</td>
+            <td>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar" [style.width]="getProgress(c) + '%'"></div>
+              </div>
+              <span class="progress-pct">{{ getProgress(c) }}%</span>
+            </td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(c.status)">
+                {{ c.status }}
+              </span>
+            </td>
+            <td class="date-cell">{{ formatDate(c.created_at) }}</td>
+            <td class="action-cell">
+              <button class="tb-btn" (click)="viewCampaign(c.id)" title="View Logs">👁️</button>
+              <button class="tb-btn tb-btn-danger" (click)="deleteCampaign(c.id)" title="Delete">🗑️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+
+</div>
+
+<!-- ===================================================
+     CAMPAIGN DETAIL MODAL
+==================================================== -->
+<div *ngIf="selectedCampaign" class="modal-backdrop" (click)="closeDetail()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h3>📧 {{ selectedCampaign.campaign_name }}</h3>
+      <button class="modal-close" (click)="closeDetail()">✕</button>
+    </div>
+
+    <div class="modal-meta">
+      <div class="meta-item"><b>Subject:</b> {{ selectedCampaign.subject }}</div>
+      <div class="meta-item"><b>Status:</b>
+        <span class="status-badge" [class]="getStatusClass(selectedCampaign.status)">
+          {{ selectedCampaign.status }}
+        </span>
+      </div>
+      <div class="meta-item"><b>Recipients:</b> {{ selectedCampaign.total_recipients }}</div>
+      <div class="meta-item"><b>Sent:</b> {{ selectedCampaign.sent_count }}</div>
+      <div class="meta-item"><b>Failed:</b> {{ selectedCampaign.failed_count }}</div>
+      <div class="meta-item"><b>Progress:</b> {{ selectedCampaign.current_batch }}/{{ selectedCampaign.total_batches }}</div>
+      <div class="meta-item"><b>Filter:</b>
+        {{ selectedCampaign.filter_type === 'all' ? 'All Customers' : selectedCampaign.filter_type + ': ' + selectedCampaign.filter_value }}
+      </div>
+    </div>
+
+    <div class="modal-logs">
+      <h4>📋 Delivery Logs ({{ campaignLogs.length }} records)</h4>
+      <div *ngIf="detailLoading" class="ec-loading">Loading logs...</div>
+      <div class="logs-table-wrap">
+        <table class="logs-table" *ngIf="!detailLoading && campaignLogs.length">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Time</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of campaignLogs">
+              <td>{{ log.recipient_email }}</td>
+              <td>{{ log.recipient_name || '-' }}</td>
+              <td>
+                <span [class]="log.status === 'sent' ? 'sent-chip' : 'failed-chip'">
+                  {{ log.status === 'sent' ? '✅ Sent' : '❌ Failed' }}
+                </span>
+              </td>
+              <td class="date-cell">{{ formatDate(log.sent_at) }}</td>
+              <td class="error-cell">{{ log.error_message || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="!detailLoading && !campaignLogs.length" class="ec-empty">
+          No logs yet (campaign may still be running)
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Header Image Dialog -->
+<div *ngIf="showHeaderImageDialog" class="modal-backdrop" (click)="showHeaderImageDialog = false">
+  <div class="modal-box" style="max-width:420px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>🖼️ Insert Logo / Image in Header</h3>
+      <button class="modal-close" (click)="showHeaderImageDialog = false">✕</button>
+    </div>
+    <div style="padding:20px;">
+      <div class="form-group">
+        <label>Image URL</label>
+        <input type="url" [(ngModel)]="headerImageUrl" placeholder="https://..." class="ec-input" />
+      </div>
+      <div class="form-group">
+        <label>Width (px)</label>
+        <input type="number" [(ngModel)]="headerImageWidth" placeholder="200" class="ec-input" />
+      </div>
+      <div class="popover-actions" style="margin-top:12px;">
+        <button class="tb-insert-btn" (click)="insertHeaderImage()">Insert</button>
+        <button class="tb-cancel-btn" (click)="showHeaderImageDialog = false">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

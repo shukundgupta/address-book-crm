@@ -4,6 +4,7 @@ import { CrmLayoutComponent } from './layout/crm-layout';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { CustomerListComponent } from './customers/customer-list/customer-list';
 import { CustomerForm } from './customers/customer-form/customer-form';
+import { EmailCampaignComponent } from './email-campaign/email-campaign';
 
 // ✅ Import Guard
 import { authGuard } from './guards/auth.guard';
@@ -40,7 +41,8 @@ export const routes: Routes = [
 
       { path: 'dashboard', component: DashboardComponent },
       { path: 'customers', component: CustomerListComponent },
-      { path: 'add-customer', component: CustomerForm }
+      { path: 'add-customer', component: CustomerForm },
+      { path: 'email', component: EmailCampaignComponent }
 
     ]
   },
