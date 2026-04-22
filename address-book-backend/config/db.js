@@ -1,18 +1,23 @@
 const mysql = require('mysql2');
 
-const db = mysql.createConnection({
+const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '', // WAMP default
-  database: 'address_book_db'
+  database: 'address_book_db',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-db.connect((err) => {
+// Test the connection
+pool.getConnection((err, connection) => {
   if (err) {
     console.error('❌ DB Connection Failed:', err);
     return;
   }
-  console.log('✅ MySQL Connected');
+  console.log('✅ MySQL Connected (via Pool)');
+  connection.release();
 });
 
-module.exports = db;
+module.exports = pool;

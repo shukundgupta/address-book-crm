@@ -7,8 +7,12 @@ const tables = [
     campaign_name VARCHAR(255) NOT NULL,
     subject VARCHAR(500) NOT NULL,
     html_body LONGTEXT NOT NULL,
+    template_header LONGTEXT DEFAULT NULL,
+    template_footer LONGTEXT DEFAULT NULL,
+    template_color VARCHAR(20) DEFAULT NULL,
     filter_type VARCHAR(50) DEFAULT 'all',
     filter_value VARCHAR(255) DEFAULT NULL,
+    customer_type VARCHAR(50) DEFAULT 'Existing',
     total_recipients INT DEFAULT 0,
     total_batches INT DEFAULT 0,
     current_batch INT DEFAULT 0,
@@ -16,6 +20,7 @@ const tables = [
     failed_count INT DEFAULT 0,
     status VARCHAR(50) DEFAULT 'draft',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     completed_at DATETIME DEFAULT NULL
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 

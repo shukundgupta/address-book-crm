@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmailCampaignService } from './email-campaign.service';
@@ -32,6 +32,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     template_header: '',
     template_footer: '',
     template_color: '#1e3a5f',
+    customer_type: 'Existing',
     filter_type: 'all',
     filter_value: '',
     from_name: ''
@@ -54,6 +55,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   ======================== */
   preview: any = null;
   previewLoading = false;
+  showRecipientModal = false;
+  filteredRecipients: any[] = [];
 
   /* ========================
      SEND STATE
@@ -70,6 +73,11 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   selectedCampaign: any = null;
   campaignLogs: any[] = [];
   detailLoading = false;
+  
+  // Track if we are editing an existing draft
+  currentCampaignId: number | null = null;
+  saving = false;
+  saveSuccess = '';
 
   /* ========================
      RICH TEXT EDITOR STATE
@@ -97,7 +105,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
 
   constructor(
     private emailService: EmailCampaignService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef
   ) {}
 
   /* ========================
@@ -548,22 +557,34 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
      PREVIEW RECIPIENTS
   ======================== */
   previewRecipients(): void {
+    console.log('🔍 Triggering previewRecipients...', this.campaign);
     this.previewLoading = true;
     this.preview = null;
 
     this.emailService.previewCampaign({
+      customer_type: this.campaign.customer_type,
       filter_type:  this.campaign.filter_type,
       filter_value: this.campaign.filter_value
     }).subscribe({
       next: (data) => {
+        console.log('✅ Preview Data Received:', data);
         this.preview = data;
+        this.filteredRecipients = data.recipients || [];
+        this.showRecipientModal = true;
         this.previewLoading = false;
+        this.cdr.detectChanges(); // Ensure UI updates
       },
       error: (err) => {
-        console.error(err);
+        console.error('❌ Preview Request Failed:', err);
+        alert('Failed to fetch recipients. Check console for details.');
         this.previewLoading = false;
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  closeRecipientModal(): void {
+    this.showRecipientModal = false;
   }
 
   /* ========================
@@ -578,9 +599,14 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     if (bDoc?.body) this.campaign.html_body        = bDoc.body.innerHTML;
     if (fDoc?.body) this.campaign.template_footer  = fDoc.body.innerHTML;
 
-    if (!this.campaign.campaign_name) { this.sendError = 'Campaign name is required'; return; }
-    if (!this.campaign.subject)       { this.sendError = 'Subject is required'; return; }
-    if (!this.campaign.html_body)     { this.sendError = 'Email body cannot be empty'; return; }
+    const payload = {
+      ...this.campaign,
+      id: this.currentCampaignId
+    };
+
+    if (!payload.campaign_name) { this.sendError = 'Campaign name is required'; return; }
+    if (!payload.subject)       { this.sendError = 'Subject is required'; return; }
+    if (!payload.html_body)     { this.sendError = 'Email body cannot be empty'; return; }
 
     const recipientCount = this.preview?.total ? this.preview.total : 'all matching';
     const confirmMsg = `Send to ${recipientCount} recipients one-by-one (3s gap each)?\n\nEst. time: ~${this.preview?.estimatedMinutes || '?'} minutes.\n\nSending will run in background.`;
@@ -591,7 +617,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.sendError = '';
     this.sendResult = null;
 
-    this.emailService.sendCampaign(this.campaign).subscribe({
+    this.emailService.sendCampaign(payload).subscribe({
       next: (res) => {
         this.sendResult = res;
         this.sending = false;
@@ -600,6 +626,102 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
       error: (err) => {
         this.sendError = err.error?.message || 'Failed to send campaign';
         this.sending = false;
+      }
+    });
+  }
+
+  /* ========================
+     SAVE DRAFT
+  ======================== */
+  saveDraft(): void {
+    // Sync from iframes
+    const hDoc = this.headerFrame?.nativeElement?.contentDocument || this.headerFrame?.nativeElement?.contentWindow?.document;
+    const bDoc = this.editorFrame?.nativeElement?.contentDocument  || this.editorFrame?.nativeElement?.contentWindow?.document;
+    const fDoc = this.footerFrame?.nativeElement?.contentDocument || this.footerFrame?.nativeElement?.contentWindow?.document;
+    
+    if (hDoc?.body) this.campaign.template_header = hDoc.body.innerHTML;
+    if (bDoc?.body) this.campaign.html_body        = bDoc.body.innerHTML;
+    if (fDoc?.body) this.campaign.template_footer  = fDoc.body.innerHTML;
+
+    if (!this.campaign.campaign_name) { alert('Please enter a campaign name'); return; }
+
+    this.saving = true;
+    this.saveSuccess = '';
+
+    const payload = { ...this.campaign, id: this.currentCampaignId };
+
+    this.emailService.saveDraft(payload).subscribe({
+      next: (res) => {
+        this.saving = false;
+        this.currentCampaignId = res.id;
+        this.saveSuccess = 'Campaign saved as draft!';
+        // Removed blocking alert to prevent UI from appearing "stuck"
+        this.loadHistory();
+        setTimeout(() => this.saveSuccess = '', 4000);
+      },
+      error: (err) => {
+        console.error('Save Draft Error:', err);
+        const msg = err.error?.message || err.message || 'Unknown Error';
+        alert(`Save failed: ${msg}`);
+        this.saving = false;
+      }
+    });
+  }
+
+  /* ========================
+     EDIT (LOAD) DRAFT
+  ======================== */
+  editDraft(campaign: any): void {
+    if (!confirm('Load this campaign into editor? Current unsaved changes will be lost.')) return;
+
+    this.detailLoading = true;
+    this.emailService.getCampaignDetail(campaign.id).subscribe({
+      next: (data) => {
+        const fullCampaign = data.campaign;
+        this.currentCampaignId = fullCampaign.id;
+        
+        let body = fullCampaign.html_body || '';
+        if (body.includes('class="email-body"')) {
+          const match = body.match(/<div class="email-body">([\s\S]*?)<\/div>/i);
+          if (match && match[1]) body = match[1].trim();
+        }
+
+        this.campaign = {
+          campaign_name:   fullCampaign.campaign_name || '',
+          subject:         fullCampaign.subject || '',
+          html_body:       body,
+          template_header: fullCampaign.template_header || '',
+          template_footer: fullCampaign.template_footer || '',
+          template_color:  fullCampaign.template_color || '#1e3a5f',
+          customer_type:   fullCampaign.customer_type || 'Existing',
+          filter_type:     fullCampaign.filter_type || 'all',
+          filter_value:    fullCampaign.filter_value || '',
+          from_name:       fullCampaign.from_name || ''
+        };
+
+        // 1. Switch to Compose Tab first
+        this.activeTab = 'compose';
+        
+        // 2. Small delay to ensure iframes are visible and ready
+        setTimeout(() => {
+          const hDoc = this.headerFrame?.nativeElement?.contentDocument || this.headerFrame?.nativeElement?.contentWindow?.document;
+          const bDoc = this.editorFrame?.nativeElement?.contentDocument  || this.editorFrame?.nativeElement?.contentWindow?.document;
+          const fDoc = this.footerFrame?.nativeElement?.contentDocument || this.footerFrame?.nativeElement?.contentWindow?.document;
+
+          if (hDoc?.body) hDoc.body.innerHTML = this.campaign.template_header;
+          if (bDoc?.body) bDoc.body.innerHTML = this.campaign.html_body;
+          if (fDoc?.body) fDoc.body.innerHTML = this.campaign.template_footer;
+
+          this.updatePreview();
+          this.detailLoading = false;
+          this.cdr.detectChanges();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+      },
+      error: (err) => {
+        console.error('Edit Draft Error:', err);
+        alert('Failed to load campaign details');
+        this.detailLoading = false;
       }
     });
   }
@@ -616,6 +738,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
       template_header: '',
       template_footer: '',
       template_color: '#1e3a5f',
+      customer_type: 'Existing',
       filter_type: 'all',
       filter_value: '',
       from_name: user.company_name || 'Our Company'
@@ -644,6 +767,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.preview = null;
     this.sendResult = null;
     this.sendError = '';
+    this.currentCampaignId = null;
+    this.saveSuccess = '';
   }
 
   /* ========================
@@ -653,12 +778,15 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.historyLoading = true;
     this.emailService.getHistory().subscribe({
       next: (data) => {
-        this.history = data;
+        console.log(`📋 History Updated at ${new Date().toLocaleTimeString()}:`, data);
+        this.history = Array.isArray(data) ? data : [];
         this.historyLoading = false;
+        this.cdr.detectChanges(); // Force UI update
       },
       error: (err) => {
-        console.error(err);
+        console.error('❌ History Load Failed:', err);
         this.historyLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

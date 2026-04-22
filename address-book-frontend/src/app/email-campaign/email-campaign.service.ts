@@ -26,11 +26,15 @@ export class EmailCampaignService {
   }
 
   getHistory() {
-    return this.http.get<any[]>(`${this.API}/history`, { headers: this.getHeaders() });
+    return this.http.get<any[]>(`${this.API}/history?t=${Date.now()}`, { headers: this.getHeaders() });
   }
 
   getCampaignDetail(id: number) {
     return this.http.get<any>(`${this.API}/history/${id}`, { headers: this.getHeaders() });
+  }
+
+  saveDraft(data: any) {
+    return this.http.post<any>(`${this.API}/save`, data, { headers: this.getHeaders() });
   }
 
   deleteCampaign(id: number) {

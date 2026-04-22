@@ -105,12 +105,17 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
    GET CAMPAIGN STATS (filter preview)
 ================================ */
 router.post('/preview', (req, res) => {
-
+  console.log('🔍 Preview Request Body:', JSON.stringify(req.body, null, 2));
   const company_id = req.user.company_id;
-  const { filter_type, filter_value } = req.body;
+  const { filter_type, filter_value, customer_type } = req.body;
 
   let sql = `SELECT id, email, company_name, city, state, pincode FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
   let params = [company_id];
+
+  if (customer_type && customer_type !== 'All') {
+    sql += ` AND customer_type = ?`;
+    params.push(customer_type);
+  }
 
   if (filter_type === 'state' && filter_value) {
     sql += ` AND state = ?`;
@@ -124,10 +129,14 @@ router.post('/preview', (req, res) => {
   }
 
   db.query(sql, params, (err, rows) => {
-    if (err) return res.status(500).json({ message: 'DB error', error: err.message });
+    if (err) {
+      console.error('❌ Preview DB Error:', err);
+      return res.status(500).json({ message: 'DB error', error: err.message });
+    }
 
     const totalRecipients = rows.length;
-    const delaySeconds = 3; // 3 seconds between each email
+    console.log(`🔍 Preview: Found ${totalRecipients} recipients for company ${company_id}`);
+    const delaySeconds = 3; 
     const estimatedSeconds = totalRecipients * delaySeconds;
     const estimatedMinutes = Math.ceil(estimatedSeconds / 60);
 
@@ -135,7 +144,8 @@ router.post('/preview', (req, res) => {
       total: totalRecipients,
       batches: totalRecipients, // one per recipient
       estimatedMinutes,
-      sample: rows.slice(0, 5)
+      sample: rows.slice(0, 5),
+      recipients: rows // Return all recipients for the front-end list window
     });
   });
 
@@ -173,17 +183,98 @@ router.get('/filter-options', (req, res) => {
 });
 
 /* ==============================
+   SAVE DRAFT (Create or Update)
+================================ */
+router.post('/save', (req, res) => {
+  console.log('📬 Save Request Body:', JSON.stringify(req.body, null, 2));
+
+  const company_id = req.user.company_id;
+  const {
+    id,
+    campaign_name,
+    subject,
+    html_body,
+    filter_type,
+    filter_value,
+    customer_type,
+    template_header,
+    template_footer,
+    template_color,
+    from_name
+  } = req.body;
+
+  const c_name   = campaign_name || 'Untitled Campaign';
+  const c_subject = subject || '';
+  const c_body    = html_body || '';
+  const c_f_type  = filter_type || 'all';
+  const c_f_val   = filter_value || null;
+  const c_c_type  = customer_type || 'Existing';
+  const c_header  = template_header || '';
+  const c_footer  = template_footer || '';
+  const c_color   = template_color || '#1e3a5f';
+  const c_from    = from_name || '';
+
+  console.log(`📝 Save Draft: ID=${id}, Company=${company_id}, Name="${c_name}", From="${c_from}"`);
+
+  if (id) {
+    const sql = `
+      UPDATE email_campaigns SET
+        campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
+        customer_type = ?, from_name = ?, template_header = ?, template_footer = ?, template_color = ?,
+        status = 'draft'
+      WHERE id = ? AND company_id = ?
+    `;
+    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_header, c_footer, c_color, id, company_id];
+    console.log('📝 Executing UPDATE Query...');
+    
+    db.query(sql, params, (err, result) => {
+      if (err) {
+        console.error('❌ Draft UPDATE Error:', err);
+        return res.status(500).json({ 
+          message: 'Update failed: ' + (err.sqlMessage || err.message), 
+          error: err.code || 'DB_ERROR' 
+        });
+      }
+      console.log('✅ Draft Updated! ID:', id);
+      res.json({ message: 'Draft updated successfully', id });
+    });
+  } else {
+    const sql = `
+      INSERT INTO email_campaigns
+        (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, template_header, template_footer, template_color, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+    `;
+    const params = [company_id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_header, c_footer, c_color];
+    console.log('📝 Executing INSERT Query...');
+
+    db.query(sql, params, (err, result) => {
+      if (err) {
+        console.error('❌ Draft INSERT Error:', err);
+        return res.status(500).json({ 
+          message: 'Insert failed: ' + (err.sqlMessage || err.message), 
+          error: err.code || 'DB_ERROR' 
+        });
+      }
+      console.log('✅ Draft Saved! ID:', result.insertId);
+      res.json({ message: 'Draft saved successfully', id: result.insertId });
+    });
+  }
+});
+
+/* ==============================
    SEND CAMPAIGN (Individual: 1 email per recipient, 3s delay)
 ================================ */
 router.post('/send', async (req, res) => {
 
   const company_id = req.user.company_id;
   const {
+    id, // optional: if sending from a previously saved draft
     campaign_name,
     subject,
     html_body,
     filter_type,
     filter_value,
+    customer_type,
     from_name,
     template_header,
     template_footer,
@@ -195,21 +286,26 @@ router.post('/send', async (req, res) => {
   }
 
   // Fetch recipients
-  let sql = `SELECT id, email, company_name, contact_person, city, state, pincode FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
-  let params = [company_id];
+  let sqlRecip = `SELECT id, email, company_name, contact_person, city, state, pincode FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
+  let paramsRecip = [company_id];
 
-  if (filter_type === 'state' && filter_value) {
-    sql += ` AND state = ?`;
-    params.push(filter_value);
-  } else if (filter_type === 'city' && filter_value) {
-    sql += ` AND city = ?`;
-    params.push(filter_value);
-  } else if (filter_type === 'pincode' && filter_value) {
-    sql += ` AND pincode = ?`;
-    params.push(filter_value);
+  if (customer_type && customer_type !== 'All') {
+    sqlRecip += ` AND customer_type = ?`;
+    paramsRecip.push(customer_type);
   }
 
-  db.query(sql, params, async (err, recipients) => {
+  if (filter_type === 'state' && filter_value) {
+    sqlRecip += ` AND state = ?`;
+    paramsRecip.push(filter_value);
+  } else if (filter_type === 'city' && filter_value) {
+    sqlRecip += ` AND city = ?`;
+    paramsRecip.push(filter_value);
+  } else if (filter_type === 'pincode' && filter_value) {
+    sqlRecip += ` AND pincode = ?`;
+    paramsRecip.push(filter_value);
+  }
+
+  db.query(sqlRecip, paramsRecip, async (err, recipients) => {
     if (err) return res.status(500).json({ message: 'Failed to fetch recipients' });
 
     if (recipients.length === 0) {
@@ -217,85 +313,90 @@ router.post('/send', async (req, res) => {
     }
 
     const totalRecipients = recipients.length;
-    const DELAY_MS = 3000; // 3 seconds between each individual email
+    const DELAY_MS = 3000;
     const estimatedMinutes = Math.ceil((totalRecipients * DELAY_MS) / 60000);
 
-    // Build the full email HTML with template wrapper
     const fullHtml = buildEmailHtml(template_header, html_body, template_footer, template_color);
 
-    // Create campaign record
-    const campaignSql = `
-      INSERT INTO email_campaigns
-        (company_id, campaign_name, subject, html_body, filter_type, filter_value, total_recipients, total_batches, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
-    `;
-
-    db.query(campaignSql, [
-      company_id, campaign_name, subject, fullHtml,
-      filter_type || 'all', filter_value || null,
-      totalRecipients, totalRecipients // total_batches = total_recipients (1 per send)
-    ], (err, result) => {
-
-      if (err) return res.status(500).json({ message: 'Failed to create campaign record' });
-
-      const campaignId = result.insertId;
-
-      // Respond immediately — sending runs in background
-      res.json({
-        message: 'Campaign started! Sending one email at a time.',
-        campaignId,
-        totalRecipients,
-        totalBatches: totalRecipients,
-        estimatedMinutes
+    if (id) {
+      // UPDATE EXISTING CAMPAIGN TO 'sending'
+      const updateSql = `
+        UPDATE email_campaigns SET
+          campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
+          customer_type = ?, template_header = ?, template_footer = ?, template_color = ?,
+          total_recipients = ?, total_batches = ?, status = 'sending', created_at = NOW()
+        WHERE id = ? AND company_id = ?
+      `;
+      db.query(updateSql, [
+        campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
+        customer_type || 'Existing', template_header, template_footer, template_color,
+        totalRecipients, totalRecipients, id, company_id
+      ], (err) => {
+        if (err) return res.status(500).json({ message: 'Failed to update campaign status' });
+        startBackgroundSending(id, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res);
       });
-
-      // Background: send one email at a time with 3s delay
-      (async () => {
-        let totalSent = 0;
-        let totalFailed = 0;
-
-        for (let i = 0; i < recipients.length; i++) {
-          const recipient = recipients[i];
-
-          // Update progress in campaign
-          db.query(
-            `UPDATE email_campaigns SET current_batch = ?, sent_count = ?, failed_count = ? WHERE id = ?`,
-            [i + 1, totalSent, totalFailed, campaignId]
-          );
-
-          const result = await sendOneEmail(
-            recipient, subject, fullHtml,
-            from_name || 'AddressBook CRM',
-            campaignId
-          );
-
-          if (result.success) {
-            totalSent++;
-            console.log(`[Campaign ${campaignId}] ✅ Sent to ${recipient.email} (${i + 1}/${totalRecipients})`);
-          } else {
-            totalFailed++;
-            console.log(`[Campaign ${campaignId}] ❌ Failed for ${recipient.email}: ${result.error}`);
-          }
-
-          // Wait 3 seconds before next email (skip wait after last one)
-          if (i < recipients.length - 1) {
-            await sleep(DELAY_MS);
-          }
-        }
-
-        // Mark completed
-        db.query(
-          `UPDATE email_campaigns SET status = 'completed', sent_count = ?, failed_count = ?, completed_at = NOW() WHERE id = ?`,
-          [totalSent, totalFailed, campaignId]
-        );
-
-        console.log(`[Campaign ${campaignId}] ✅ COMPLETED — Total sent: ${totalSent}, Failed: ${totalFailed}`);
-      })();
-
-    });
+    } else {
+      // CREATE NEW CAMPAIGN RECORD
+      const campaignSql = `
+        INSERT INTO email_campaigns
+          (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, template_header, template_footer, template_color, total_recipients, total_batches, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
+      `;
+      db.query(campaignSql, [
+        company_id, campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
+        customer_type || 'Existing', template_header, template_footer, template_color,
+        totalRecipients, totalRecipients
+      ], (err, result) => {
+        if (err) return res.status(500).json({ message: 'Failed to create campaign' });
+        startBackgroundSending(result.insertId, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res);
+      });
+    }
   });
 
 });
+
+/**
+ * Helper to handle background sending logic
+ */
+function startBackgroundSending(campaignId, recipients, subject, fullHtml, fromName, totalRecipients, DELAY_MS, estimatedMinutes, res) {
+  // Respond immediately
+  res.json({
+    message: 'Campaign started! Sending one email at a time.',
+    campaignId,
+    totalRecipients,
+    totalBatches: totalRecipients,
+    estimatedMinutes
+  });
+
+  (async () => {
+    let totalSent = 0;
+    let totalFailed = 0;
+
+    for (let i = 0; i < recipients.length; i++) {
+        const recipient = recipients[i];
+        db.query(
+          `UPDATE email_campaigns SET current_batch = ?, sent_count = ?, failed_count = ? WHERE id = ?`,
+          [i + 1, totalSent, totalFailed, campaignId]
+        );
+
+        const result = await sendOneEmail(
+          recipient, subject, fullHtml,
+          fromName || 'AddressBook CRM',
+          campaignId
+        );
+
+        if (result.success) totalSent++;
+        else totalFailed++;
+
+        if (i < recipients.length - 1) await sleep(DELAY_MS);
+    }
+
+    db.query(
+      `UPDATE email_campaigns SET status = 'completed', sent_count = ?, failed_count = ?, completed_at = NOW() WHERE id = ?`,
+      [totalSent, totalFailed, campaignId]
+    );
+  })();
+}
 
 /* ==============================
    GET CAMPAIGN HISTORY
@@ -305,14 +406,20 @@ router.get('/history', (req, res) => {
   const company_id = req.user.company_id;
 
   const sql = `
-    SELECT * FROM email_campaigns
+    SELECT id, campaign_name, subject, filter_type, filter_value, customer_type, 
+           total_recipients, sent_count, failed_count, status, created_at, from_name
+    FROM email_campaigns
     WHERE company_id = ?
     ORDER BY created_at DESC
     LIMIT 50
   `;
 
   db.query(sql, [company_id], (err, rows) => {
-    if (err) return res.status(500).json({ message: 'DB error' });
+    if (err) {
+      console.error('❌ History DB Error:', err);
+      return res.status(500).json({ message: 'DB error' });
+    }
+    console.log(`📋 History: Loaded ${rows.length} campaigns for company ${company_id}`);
     res.json(rows);
   });
 
@@ -334,6 +441,7 @@ router.get('/history/:id', (req, res) => {
     const logsSql = `SELECT * FROM campaign_logs WHERE campaign_id = ? ORDER BY sent_at DESC`;
     db.query(logsSql, [campaignId], (err, logs) => {
       if (err) return res.status(500).json({ message: 'DB error' });
+      console.log(`🔍 Detail: Loaded campaign #${campaignId} for company ${company_id}`);
       res.json({ campaign: campaign[0], logs });
     });
   });

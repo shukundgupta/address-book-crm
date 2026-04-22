@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Apr 18, 2026 at 04:01 AM
+-- Generation Time: Apr 22, 2026 at 03:36 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -20,6 +20,25 @@ SET time_zone = "+00:00";
 --
 -- Database: `address_book_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `campaign_logs`
+--
+
+DROP TABLE IF EXISTS `campaign_logs`;
+CREATE TABLE IF NOT EXISTS `campaign_logs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `campaign_id` int NOT NULL,
+  `recipient_email` varchar(255) NOT NULL,
+  `recipient_name` varchar(255) DEFAULT NULL,
+  `status` varchar(50) NOT NULL,
+  `error_message` text,
+  `sent_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_campaign_email` (`campaign_id`,`recipient_email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -86,6 +105,45 @@ INSERT INTO `customers` (`id`, `company_id`, `company_name`, `address`, `state`,
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `email_campaigns`
+--
+
+DROP TABLE IF EXISTS `email_campaigns`;
+CREATE TABLE IF NOT EXISTS `email_campaigns` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `company_id` int NOT NULL,
+  `campaign_name` varchar(255) NOT NULL,
+  `subject` varchar(500) NOT NULL,
+  `html_body` longtext NOT NULL,
+  `template_header` longtext,
+  `template_footer` longtext,
+  `template_color` varchar(20) DEFAULT NULL,
+  `filter_type` varchar(50) DEFAULT 'all',
+  `filter_value` varchar(255) DEFAULT NULL,
+  `customer_type` varchar(50) DEFAULT NULL,
+  `from_name` varchar(255) DEFAULT NULL,
+  `total_recipients` int DEFAULT '0',
+  `total_batches` int DEFAULT '0',
+  `current_batch` int DEFAULT '0',
+  `sent_count` int DEFAULT '0',
+  `failed_count` int DEFAULT '0',
+  `status` varchar(50) DEFAULT 'draft',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `completed_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `email_campaigns`
+--
+
+INSERT INTO `email_campaigns` (`id`, `company_id`, `campaign_name`, `subject`, `html_body`, `template_header`, `template_footer`, `template_color`, `filter_type`, `filter_value`, `customer_type`, `from_name`, `total_recipients`, `total_batches`, `current_batch`, `sent_count`, `failed_count`, `status`, `created_at`, `updated_at`, `completed_at`) VALUES
+(18, 1, 'vzxvzx', '', '\n        <h1 style=\"text-align: center;\">Campaign Title - Premium Hydrogen Solution</h1>\n        <p>Dear customer,</p>\n        <p>Welcome to our latest promotional campaign. We are excited to share some revolutionary updates with you...</p>\n      \n      \n    ', '\n      <div style=\"background:#1e3a5f; padding: 30px 40px; border-bottom: 5px solid rgba(0,0,0,0.1);\">\n        <table style=\"width:100%;\" cellpadding=\"0\" cellspacing=\"0\">\n          <tbody><tr>\n            <td style=\"vertical-align: middle;\">\n              <div style=\"font-size: 32px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px;\">\n                Komal Chemiequip Pvt. Ltd.\n              </div>\n              <div style=\"font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 5px; font-style: italic;\">\n                Innovation in Every Step\n              </div>\n            </td>\n            <td style=\"text-align: right; vertical-align: middle;\">\n               <div style=\"background: rgba(255,255,255,0.2); padding: 10px 15px; display: inline-block; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3);\">\n                 <span style=\"font-size: 18px; font-weight: bold; color: #fff;\">EST. 2001</span></div></td>\n          </tr>\n        </tbody></table>\n      </div>\n      <div style=\"height: 1px; background: rgba(255,255,255,0.1);\"></div>\n    ', '\n      <div style=\"background: #333; color: #fff; padding: 40px; font-family: sans-serif;\">\n        <table style=\"width: 100%;\" cellpadding=\"0\" cellspacing=\"0\">\n          <tbody><tr>\n            <td style=\"width: 60%; padding-right: 20px;\">\n              <div style=\"font-size: 20px; font-weight: bold; border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 15px; color: #fff;\">\n                Komal Chemiequip Pvt. Ltd.\n              </div>\n              <div style=\"font-size: 13px; line-height: 1.8; color: #ccc;\">\n                #48, Noothanchery, Madambakkam, Chennai - 600 126, India<br>\n                Ph: +91 97395 33800 | +91 95000 00000<br>\n                Email: hydrogenmktg@tiaano.com | Web: www.hydrogenanode.com\n              </div>\n            </td>\n            <td style=\"width: 40%; vertical-align: top; text-align: right;\">\n              <div style=\"font-size: 14px; font-weight: bold; margin-bottom: 10px;\">Connect With Us</div>\n              <div>\n                <a href=\"#\" style=\"display:inline-block; margin-left: 10px; text-decoration:none;\"><img src=\"https://cdn-icons-png.flaticon.com/32/174/174848.png\" width=\"24\" height=\"24\" alt=\"FB\"></a>\n                <a href=\"#\" style=\"display:inline-block; margin-left: 10px; text-decoration:none;\"><img src=\"https://cdn-icons-png.flaticon.com/32/174/174855.png\" width=\"24\" height=\"24\" alt=\"IG\"></a>\n                <a href=\"#\" style=\"display:inline-block; margin-left: 10px; text-decoration:none;\"><img src=\"https://cdn-icons-png.flaticon.com/32/3536/3536505.png\" width=\"24\" height=\"24\" alt=\"LI\"></a>\n                <a href=\"#\" style=\"display:inline-block; margin-left: 10px; text-decoration:none;\"><img src=\"https://cdn-icons-png.flaticon.com/32/733/733579.png\" width=\"24\" height=\"24\" alt=\"TW\"></a>\n              </div>\n            </td>\n          </tr>\n        </tbody></table>\n        <div style=\"margin-top: 30px; padding-top: 20px; border-top: 1px solid #444; font-size: 11px; color: #888; text-align: center;\">\n          Copyright © 2026 Komal Chemiequip Pvt. Ltd.. All rights reserved.<br>\n          You are receiving this email because you are a valued customer of Komal Chemiequip Pvt. Ltd..\n        </div>\n      </div>\n      <div style=\"background: #e0f7fa; height: 10px;\"></div>\n    ', '#1e3a5f', 'all', NULL, 'Existing', 'Komal Chemiequip Pvt. Ltd.', 0, 0, 0, 0, 0, 'draft', '2026-04-22 00:47:11', '2026-04-22 00:49:13', NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `otp_verification`
 --
 
@@ -98,7 +156,7 @@ CREATE TABLE IF NOT EXISTS `otp_verification` (
   `verified` tinyint(1) DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `otp_verification`
@@ -150,7 +208,8 @@ INSERT INTO `otp_verification` (`id`, `email`, `otp`, `expires_at`, `verified`, 
 (43, 'shukundgupta@gmail.com', '917412', '2026-04-17 21:49:37', 0, '2026-04-17 16:14:36'),
 (44, 'sukundg@gmail.com', '976153', '2026-04-17 21:50:45', 0, '2026-04-17 16:15:45'),
 (45, 'sukundg@gmail.com', '652533', '2026-04-17 21:59:47', 0, '2026-04-17 16:24:47'),
-(46, 'shukundgupta@gmail.com', '130235', '2026-04-17 22:22:06', 0, '2026-04-17 16:47:05');
+(46, 'shukundgupta@gmail.com', '130235', '2026-04-17 22:22:06', 0, '2026-04-17 16:47:05'),
+(47, 'admin@tiaano.com', '637277', '2026-04-21 09:12:31', 0, '2026-04-21 03:37:30');
 
 -- --------------------------------------------------------
 
