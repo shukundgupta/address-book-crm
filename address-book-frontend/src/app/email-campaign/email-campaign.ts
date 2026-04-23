@@ -95,9 +95,11 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   showLinkDialog     = false;
   showImageDialog    = false;
   showHeaderImageDialog = false;
+  showHtmlDialog     = false;
   linkUrl   = '';
   linkText  = '';
   imageUrl  = '';
+  htmlCode  = '';
   headerImageUrl   = '';
   headerImageWidth = 160;
 
@@ -268,9 +270,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
               </div>
             </td>
             <td style="text-align: right; vertical-align: middle;">
-               <div style="background: rgba(255,255,255,0.2); padding: 10px 15px; display: inline-block; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3);">
-                 <span style="font-size: 18px; font-weight: bold; color: #fff;">EST. 1992</span>
-               </div>
+               <img src="/assets/komal.jpg" style="height: 70px; border-radius: 6px; background: #fff; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);" alt="Komal Logo">
             </td>
           </tr>
         </table>
@@ -494,6 +494,26 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.exec('insertImage', this.imageUrl);
     this.imageUrl = '';
     this.showImageDialog = false;
+  }
+
+  /* ========================
+     EDIT BODY HTML SOURCE
+  ======================== */
+  openHtmlDialog(): void {
+    const doc = this.getDoc();
+    if (doc) {
+      this.htmlCode = doc.body.innerHTML;
+    }
+    this.showHtmlDialog = true;
+  }
+
+  applyHtmlCode(): void {
+    const doc = this.getDoc();
+    if (doc) {
+      doc.body.innerHTML = this.htmlCode;
+      this.campaign.html_body = this.htmlCode;
+    }
+    this.showHtmlDialog = false;
   }
 
   /* ========================
@@ -849,5 +869,12 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   formatDate(d: string): string {
     if (!d) return '-';
     return new Date(d).toLocaleString();
+  }
+
+  /* ========================
+     PRINT PREVIEW
+  ======================== */
+  printPreview(): void {
+    window.print();
   }
 }

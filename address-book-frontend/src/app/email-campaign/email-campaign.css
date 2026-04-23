@@ -789,15 +789,48 @@
   color: #4a5568;
 }
 
-/* Status badges */
-.status-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
+/* ========================
+   CODE EDITOR STYLES
+======================== */
+.code-editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2d3748;
+  color: #e2e8f0;
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.code-textarea {
+  font-family: 'Fira Code', 'Cascadia Code', Consolas, Monaco, 'Andale Mono', monospace !important;
+  font-size: 14px !important;
+  background: #1a202c !important;
+  color: #a0aec0 !important;
+  border: 1px solid #2d3748 !important;
+  border-top: none !important;
+  border-radius: 0 0 8px 8px !important;
+  line-height: 1.6 !important;
+  padding: 16px !important;
+  resize: none !important;
+}
+
+.code-textarea:focus {
+  border-color: #4f75f6 !important;
+  box-shadow: none !important;
+  color: #edf2f7 !important;
+}
+
+.tb-btn-small {
+  padding: 2px 8px;
   font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #feb2b2;
+}
+.tb-btn-small:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fc8181;
 }
 
 .status-completed { background: #c6f6d5; color: #276749; }
@@ -991,9 +1024,18 @@
 
 .preview-tab-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   color: #1e3a5f;
+  font-weight: 800;
+}
+
+.preview-header-left {
   flex: 1;
+}
+
+.preview-header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .preview-hint {
@@ -1010,15 +1052,22 @@
 }
 
 .a4-sheet {
-  width: 794px;
-  min-height: 1123px; /* A4 at 96 DPI: 297mm ≈ 1123px */
+  width: 210mm;
+  min-height: 297mm;
   background: #ffffff;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
-  border-radius: 2px;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 10px 50px rgba(0,0,0,0.15);
+  border: 1px solid #ddd;
+  display: block; /* Changed to block for more predictable layout */
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  transition: transform 0.3s ease;
+  margin: 0 auto;
+}
+
+.a4-sheet:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 60px rgba(0,0,0,0.2);
 }
 
 .a4-header-zone {
@@ -1031,25 +1080,72 @@
 }
 
 .a4-body-zone {
-  flex: 1;
-  padding: 30px 40px;
+  width: 100%;
+  padding: 35px 50px; /* Professional symmetrical margins */
   font-size: 14px;
   color: #333;
   line-height: 1.7;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
-.a4-body-zone h1,
-.a4-body-zone h2,
-.a4-body-zone h3 { color: var(--accent, #1e3a5f); }
+.a4-body-content {
+  width: 100%;
+}
 
-.a4-body-zone table { border-collapse: collapse; width: 100%; }
-.a4-body-zone td,
-.a4-body-zone th { border: 1px solid #ccc; padding: 8px; }
-.a4-body-zone img { max-width: 100%; height: auto; }
-.a4-body-zone a { color: var(--accent, #1e3a5f); }
-.a4-body-zone ul,
-.a4-body-zone ol { padding-left: 20px; }
-.a4-body-zone li { margin-bottom: 4px; }
+/* 
+   PREMIUM DEVELOPER FIX: 
+   Ensure user-pasted tables/images don't break the A4 layout 
+*/
+.a4-body-content table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  height: auto !important;
+}
+
+.a4-body-content img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.a4-body-content p, 
+.a4-body-content h1, 
+.a4-body-content h2, 
+.a4-body-content h3, 
+.a4-body-content ul, 
+.a4-body-content ol {
+  /* Using zone padding instead for consistency */
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* If the first element is a table (like professional templates), remove the text padding */
+.a4-body-content > table:first-child,
+.a4-body-content > div > table:first-child {
+  margin-top: 0;
+}
+
+.a4-body-content h1, 
+.a4-body-content h2, 
+.a4-body-content h3 { 
+  color: var(--accent, #1e3a5f); 
+}
+
+.a4-body-content a { 
+  color: var(--accent, #1e3a5f); 
+  text-decoration: underline;
+}
+
+.a4-body-content ul, 
+.a4-body-content ol { 
+  padding-left: 60px;
+}
+
+.a4-body-content li { 
+  margin-bottom: 6px; 
+}
 
 .a4-footer-zone {
   flex-shrink: 0;
@@ -1201,3 +1297,95 @@
 .preview-scroll-box::-webkit-scrollbar-track { background: #f1f5f9; }
 .preview-scroll-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .preview-scroll-box::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* ================================================
+   PRINT STYLES
+================================================ */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  /* 2. Hide component UI elements (Tabs, Editor UI, etc.) */
+  .ec-header, 
+  .ec-tabs, 
+  .ec-compose, 
+  .ec-history, 
+  .preview-tab-header,
+  .modal-backdrop,
+  .save-toast {
+    display: none !important;
+  }
+
+  /* 3. Isolate the A4 sheet */
+  .ec-page {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    display: block !important;
+    height: auto !important;
+  }
+
+  .ec-preview-tab {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+  }
+
+  .a4-preview-container {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    background: #fff !important;
+  }
+
+  .a4-sheet {
+    display: block !important;
+    width: 210mm !important;
+    min-height: 297mm;
+    margin: 0 auto !important; /* Center the sheet on the page */
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    transform: none !important;
+    overflow: hidden !important;
+  }
+
+  /* 4. Ensure Header/Footer zones are true full-width */
+  .a4-header-zone, 
+  .a4-footer-zone {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 5. Ensure Body keeps its professional margins and prevents overflow */
+  .a4-body-zone {
+    width: 100% !important;
+    padding: 35px 50px !important; /* Increased symmetrical horizontal padding */
+    display: block !important;
+    box-sizing: border-box !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .a4-body-content {
+    width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
+  }
+
+  .a4-body-content table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important; /* Force tables to respect container width */
+  }
+}

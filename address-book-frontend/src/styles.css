@@ -32,3 +32,60 @@ body {
     background-position: 0% 50%;
   }
 }
+
+/* =========================
+   GLOBAL PRINT OVERRIDES
+   ========================= */
+@media print {
+  /* Hide all web UI elements and layout furniture */
+  .sidebar, 
+  .topbar, 
+  nav, 
+  aside,
+  header:not(.a4-header-zone),
+  footer:not(.a4-footer-zone),
+  .ec-header,
+  .ec-tabs,
+  .preview-tab-header,
+  .modal-backdrop,
+  .save-toast,
+  .action-btns,
+  button {
+    display: none !important;
+  }
+
+  /* Reset layout containers */
+  html, body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+  }
+
+  .crm-container {
+    display: block !important;
+    height: auto !important;
+  }
+
+  .main-area {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .page {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Force background colors and images in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

@@ -253,6 +253,9 @@
               </div>
             </div>
 
+            <!-- Body HTML Source -->
+            <button class="tb-btn" (click)="openHtmlDialog()" title="Edit Body HTML Source"><b>&lt;/&gt;</b> Body Source</button>
+
             <div class="tb-sep"></div>
 
             <button class="tb-btn" (click)="exec('superscript')" title="Superscript">x²</button>
@@ -437,9 +440,14 @@
   ==================================================== -->
   <div [hidden]="activeTab !== 'preview'" class="ec-preview-tab">
     <div class="preview-tab-header">
-      <h3>📄 A4 Email Preview</h3>
-      <p class="preview-hint">This is how your email will look in the recipient's inbox</p>
-      <button class="ec-btn ec-btn-outline" (click)="activeTab = 'compose'">← Back to Editor</button>
+      <div class="preview-header-left">
+        <h3>📄 A4 Email Preview</h3>
+        <p class="preview-hint">This is how your email will look in the recipient's inbox</p>
+      </div>
+      <div class="preview-header-actions">
+        <button class="ec-btn ec-btn-ghost" (click)="printPreview()">🖨️ Print A4</button>
+        <button class="ec-btn ec-btn-outline" (click)="activeTab = 'compose'">← Back to Editor</button>
+      </div>
     </div>
 
     <div class="a4-preview-container">
@@ -677,6 +685,35 @@
 
     <div class="modal-footer">
       <button class="ec-btn ec-btn-primary" (click)="closeRecipientModal()">Close & Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- HTML Source Editor Dialog -->
+<div *ngIf="showHtmlDialog" class="modal-backdrop" (click)="showHtmlDialog = false">
+  <div class="modal-box" style="max-width:850px; width: 90%;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><b>&lt;/&gt;</b> Body HTML Source Editor</h3>
+      <button class="modal-close" (click)="showHtmlDialog = false">✕</button>
+    </div>
+    <div style="padding:20px;">
+      <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+        Advanced Mode: Edit the raw HTML of the <b>Body section</b>. Header and Footer remain protected.
+      </p>
+      
+      <div class="form-group" style="margin-bottom: 0;">
+        <div class="code-editor-toolbar">
+          <span>📝 HTML Content</span>
+          <button class="tb-btn tb-btn-small" (click)="htmlCode = ''">🗑️ Clear All</button>
+        </div>
+        <textarea [(ngModel)]="htmlCode" rows="20" class="ec-input code-textarea" 
+          placeholder="Enter full body HTML here..."></textarea>
+      </div>
+
+      <div class="popover-actions" style="margin-top:20px; justify-content: flex-end;">
+        <button class="tb-cancel-btn" (click)="showHtmlDialog = false" style="min-width: 100px;">Cancel</button>
+        <button class="ec-btn ec-btn-primary" (click)="applyHtmlCode()" style="min-width: 150px;">Apply to Body</button>
+      </div>
     </div>
   </div>
 </div>
