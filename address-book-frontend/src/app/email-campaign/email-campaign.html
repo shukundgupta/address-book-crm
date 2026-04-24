@@ -14,16 +14,13 @@
       </div>
     </div>
     <div class="ec-tabs">
-      <button class="ec-tab" [class.active]="activeTab === 'compose'"
-        (click)="activeTab = 'compose'">
+      <button class="ec-tab" [class.active]="activeTab === 'compose'" (click)="activeTab = 'compose'">
         ✍️ Compose
       </button>
-      <button class="ec-tab" [class.active]="activeTab === 'preview'"
-        (click)="activeTab = 'preview'; updatePreview()">
+      <button class="ec-tab" [class.active]="activeTab === 'preview'" (click)="activeTab = 'preview'; updatePreview()">
         👁️ Preview
       </button>
-      <button class="ec-tab" [class.active]="activeTab === 'history'"
-        (click)="activeTab = 'history'; loadHistory()">
+      <button class="ec-tab" [class.active]="activeTab === 'history'" (click)="activeTab = 'history'; loadHistory()">
         📋 History
       </button>
     </div>
@@ -65,19 +62,44 @@
           <div class="form-row-2">
             <div class="form-group">
               <label>Campaign Name *</label>
-              <input type="text" [(ngModel)]="campaign.campaign_name"
-                placeholder="e.g. Summer Sale 2025" class="ec-input" />
+              <input type="text" [(ngModel)]="campaign.campaign_name" placeholder="e.g. Summer Sale 2025"
+                class="ec-input" />
             </div>
             <div class="form-group">
               <label>From Name</label>
-              <input type="text" [(ngModel)]="campaign.from_name"
-                placeholder="Your Company Name" class="ec-input" />
+              <input type="text" [(ngModel)]="campaign.from_name" placeholder="Your Company Name" class="ec-input" />
             </div>
           </div>
           <div class="form-group">
             <label>Email Subject *</label>
-            <input type="text" [(ngModel)]="campaign.subject"
-              placeholder="Enter compelling subject line..." class="ec-input" />
+            <input type="text" [(ngModel)]="campaign.subject" placeholder="Enter compelling subject line..."
+              class="ec-input" />
+          </div>
+        </div>
+
+        <!-- SOCIAL MEDIA LINKS -->
+        <div class="ec-card social-links-card">
+          <h3 class="card-title">🌐 Social Media Presence</h3>
+          <p class="section-hint">Add your profile URLs to automatically link the footer icons.</p>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label><span class="social-icon fb"></span> Facebook URL</label>
+              <input type="url" [(ngModel)]="campaign.social_fb" (input)="syncSocialLinks()" placeholder="https://facebook.com/yourpage" class="ec-input" />
+            </div>
+            <div class="form-group">
+              <label><span class="social-icon ig"></span> Instagram URL</label>
+              <input type="url" [(ngModel)]="campaign.social_ig" (input)="syncSocialLinks()" placeholder="https://instagram.com/yourprofile" class="ec-input" />
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label><span class="social-icon li"></span> LinkedIn URL</label>
+              <input type="url" [(ngModel)]="campaign.social_li" (input)="syncSocialLinks()" placeholder="https://linkedin.com/company/yourcompany" class="ec-input" />
+            </div>
+            <div class="form-group">
+              <label><span class="social-icon tw"></span> X (Twitter) URL</label>
+              <input type="url" [(ngModel)]="campaign.social_tw" (input)="syncSocialLinks()" placeholder="https://x.com/yourhandle" class="ec-input" />
+            </div>
           </div>
         </div>
 
@@ -89,8 +111,8 @@
             <h3 class="card-title">🎨 A4 Email Template</h3>
             <div class="template-color-row">
               <label class="color-label">Brand Color:</label>
-              <input type="color" [(ngModel)]="campaign.template_color"
-                class="brand-color-picker" title="Header/Footer color" />
+              <input type="color" [(ngModel)]="campaign.template_color" class="brand-color-picker"
+                title="Header/Footer color" />
               <span class="color-hex">{{ campaign.template_color }}</span>
               <button class="tb-btn" (click)="activeTab = 'preview'; updatePreview()" style="margin-left:8px;">
                 👁️ Preview A4
@@ -114,7 +136,8 @@
             <div class="tb-sep"></div>
             <button class="tb-btn" title="Insert Logo" (click)="openHeaderImageDialog()">🖼️ Logo</button>
             <div class="tb-sep"></div>
-            <button class="tb-btn" (click)="applyHeaderTemplate()" title="Apply default header template">✨ Default Template</button>
+            <button class="tb-btn" (click)="applyHeaderTemplate()" title="Apply default header template">✨ Default
+              Template</button>
           </div>
           <iframe #headerFrame class="template-frame header-frame" title="Header editor" frameborder="0"></iframe>
 
@@ -126,8 +149,8 @@
 
           <!-- TOOLBAR ROW 1: Font -->
           <div class="toolbar-strip">
-            <select class="tb-select" [(ngModel)]="currentFontFamily"
-              (change)="setFontFamily(currentFontFamily)" title="Font Family">
+            <select class="tb-select" [(ngModel)]="currentFontFamily" (change)="setFontFamily(currentFontFamily)"
+              title="Font Family">
               <option value="Arial">Arial</option>
               <option value="Times New Roman">Times New Roman</option>
               <option value="Courier New">Courier New</option>
@@ -137,8 +160,8 @@
               <option value="Trebuchet MS">Trebuchet MS</option>
             </select>
 
-            <select class="tb-select tb-size" [(ngModel)]="currentFontSize"
-              (change)="setFontSize(currentFontSize)" title="Font Size">
+            <select class="tb-select tb-size" [(ngModel)]="currentFontSize" (change)="setFontSize(currentFontSize)"
+              title="Font Size">
               <option value="10px">10</option>
               <option value="12px">12</option>
               <option value="14px">14</option>
@@ -168,8 +191,7 @@
               <div *ngIf="showColorPicker" class="color-palette">
                 <span *ngFor="let c of ['#000000','#434343','#cc0000','#e06666','#ff9900',
                   '#ffd966','#38761d','#00ff00','#274e13','#1155cc','#6fa8dc','#0000ff',
-                  '#352a87','#741b47','#c27ba0','#ffffff']"
-                  class="color-swatch" [style.background]="c"
+                  '#352a87','#741b47','#c27ba0','#ffffff']" class="color-swatch" [style.background]="c"
                   (click)="setColor(c)"></span>
               </div>
             </div>
@@ -182,8 +204,7 @@
               <div *ngIf="showBgColorPicker" class="color-palette">
                 <span *ngFor="let c of ['#ffff00','#00ff00','#00ffff','#ff00ff','#ff9900',
                   '#ff0000','#0000ff','#ffffff','#efefef','#cccccc','#999999','#666666',
-                  '#333333','#000000','#fce5cd','#d9ead3']"
-                  class="color-swatch" [style.background]="c"
+                  '#333333','#000000','#fce5cd','#d9ead3']" class="color-swatch" [style.background]="c"
                   (click)="setBgColor(c)"></span>
               </div>
             </div>
@@ -254,7 +275,8 @@
             </div>
 
             <!-- Body HTML Source -->
-            <button class="tb-btn" (click)="openHtmlDialog()" title="Edit Body HTML Source"><b>&lt;/&gt;</b> Body Source</button>
+            <button class="tb-btn" (click)="openHtmlDialog()" title="Edit Body HTML Source"><b>&lt;/&gt;</b> Body
+              Source</button>
 
             <div class="tb-sep"></div>
 
@@ -270,9 +292,7 @@
           </div>
 
           <!-- BODY IFRAME EDITOR -->
-          <iframe #editorFrame class="rich-editor-frame"
-            title="Email body editor"
-            frameborder="0">
+          <iframe #editorFrame class="rich-editor-frame" title="Email body editor" frameborder="0">
           </iframe>
 
           <!-- TEMPLATE VARIABLES -->
@@ -298,7 +318,8 @@
             <button class="tb-btn" (click)="execInFrame('footerFrame', 'justifyCenter')" title="Center">☰</button>
             <button class="tb-btn" (click)="execInFrame('footerFrame', 'justifyRight')" title="Right">➡</button>
             <div class="tb-sep"></div>
-            <button class="tb-btn" (click)="applyFooterTemplate()" title="Apply default footer">✨ Default Template</button>
+            <button class="tb-btn" (click)="applyFooterTemplate()" title="Apply default footer">✨ Default
+              Template</button>
           </div>
           <iframe #footerFrame class="template-frame footer-frame" title="Footer editor" frameborder="0"></iframe>
 
@@ -330,15 +351,18 @@
             <label>Sent To</label>
             <div class="toggle-group">
               <label class="toggle-btn" [class.active]="campaign.customer_type === 'Existing'">
-                <input type="radio" [(ngModel)]="campaign.customer_type" value="Existing" (change)="onFilterTypeChange(); preview = null" />
+                <input type="radio" [(ngModel)]="campaign.customer_type" value="Existing"
+                  (change)="onFilterTypeChange(); preview = null" />
                 Existing
               </label>
               <label class="toggle-btn" [class.active]="campaign.customer_type === 'New'">
-                <input type="radio" [(ngModel)]="campaign.customer_type" value="New" (change)="onFilterTypeChange(); preview = null" />
+                <input type="radio" [(ngModel)]="campaign.customer_type" value="New"
+                  (change)="onFilterTypeChange(); preview = null" />
                 New
               </label>
               <label class="toggle-btn" [class.active]="campaign.customer_type === 'All'">
-                <input type="radio" [(ngModel)]="campaign.customer_type" value="All" (change)="onFilterTypeChange(); preview = null" />
+                <input type="radio" [(ngModel)]="campaign.customer_type" value="All"
+                  (change)="onFilterTypeChange(); preview = null" />
                 All
               </label>
             </div>
@@ -346,9 +370,9 @@
 
           <div class="form-group">
             <label>Filter By</label>
-            <select [(ngModel)]="campaign.filter_type"
-              (change)="onFilterTypeChange()" class="ec-input">
-              <option value="all">{{ campaign.customer_type === 'All' ? 'All Customers' : 'All ' + campaign.customer_type + ' Customers' }}</option>
+            <select [(ngModel)]="campaign.filter_type" (change)="onFilterTypeChange()" class="ec-input">
+              <option value="all">{{ campaign.customer_type === 'All' ? 'All Customers' : 'All ' +
+                campaign.customer_type + ' Customers' }}</option>
               <option value="state">By State</option>
               <option value="city">By City</option>
               <option value="pincode">By Pincode</option>
@@ -379,9 +403,7 @@
             </select>
           </div>
 
-          <button class="ec-btn ec-btn-outline w-full"
-            (click)="previewRecipients()"
-            [disabled]="previewLoading">
+          <button class="ec-btn ec-btn-outline w-full" (click)="previewRecipients()" [disabled]="previewLoading">
             <span *ngIf="previewLoading" class="spin">⟳</span>
             {{ previewLoading ? 'Checking...' : '🔍 Check Recipients' }}
           </button>
@@ -409,17 +431,13 @@
         <!-- ACTION BUTTONS -->
         <div class="action-btns">
           <div *ngIf="saveSuccess" class="save-toast">✅ {{ saveSuccess }}</div>
-          
-          <button class="ec-btn ec-btn-save w-full"
-            (click)="saveDraft()"
-            [disabled]="saving">
+
+          <button class="ec-btn ec-btn-save w-full" (click)="saveDraft()" [disabled]="saving">
             <span *ngIf="saving" class="spin">⟳</span>
             {{ saving ? 'Saving Draft...' : '💾 Save Draft' }}
           </button>
 
-          <button class="ec-btn ec-btn-primary w-full"
-            (click)="sendCampaign()"
-            [disabled]="sending">
+          <button class="ec-btn ec-btn-primary w-full" (click)="sendCampaign()" [disabled]="sending">
             <span *ngIf="sending" class="spin">⟳</span>
             {{ sending ? 'Launching Campaign...' : '🚀 Send Campaign' }}
           </button>
@@ -454,7 +472,7 @@
       <div class="a4-sheet" [style.--accent]="campaign.template_color">
 
         <!-- HEADER ZONE -->
-        <div class="a4-header-zone" [style.background]="campaign.template_color">
+        <div class="a4-header-zone" [style.background]="campaign.template_color" style="-webkit-print-color-adjust: exact; print-color-adjust: exact;">
           <div class="a4-header-content" [innerHTML]="previewHeaderHtml"></div>
         </div>
 
@@ -464,7 +482,7 @@
         </div>
 
         <!-- FOOTER ZONE -->
-        <div class="a4-footer-zone" [style.background]="campaign.template_color">
+        <div class="a4-footer-zone" [style.background]="campaign.template_color" style="-webkit-print-color-adjust: exact; print-color-adjust: exact;">
           <div class="a4-footer-content" [innerHTML]="previewFooterHtml"></div>
         </div>
 
@@ -535,7 +553,8 @@
             <td class="date-cell">{{ formatDate(c.created_at) }}</td>
             <td class="action-cell">
               <button class="tb-btn" (click)="viewCampaign(c.id)" title="View Logs">👁️</button>
-              <button *ngIf="c.status === 'draft' || c.status === 'completed'" class="tb-btn tb-btn-edit" (click)="editDraft(c)" title="Edit/Use Again">✏️</button>
+              <button *ngIf="c.status === 'draft' || c.status === 'completed'" class="tb-btn tb-btn-edit"
+                (click)="editDraft(c)" title="Edit/Use Again">✏️</button>
               <button class="tb-btn tb-btn-danger" (click)="deleteCampaign(c.id)" title="Delete">🗑️</button>
             </td>
           </tr>
@@ -569,9 +588,11 @@
       <div class="meta-item"><b>Recipients:</b> {{ selectedCampaign.total_recipients }}</div>
       <div class="meta-item"><b>Sent:</b> {{ selectedCampaign.sent_count }}</div>
       <div class="meta-item"><b>Failed:</b> {{ selectedCampaign.failed_count }}</div>
-      <div class="meta-item"><b>Progress:</b> {{ selectedCampaign.current_batch }}/{{ selectedCampaign.total_batches }}</div>
+      <div class="meta-item"><b>Progress:</b> {{ selectedCampaign.current_batch }}/{{ selectedCampaign.total_batches }}
+      </div>
       <div class="meta-item"><b>Filter:</b>
-        {{ selectedCampaign.filter_type === 'all' ? 'All Customers' : selectedCampaign.filter_type + ': ' + selectedCampaign.filter_value }}
+        {{ selectedCampaign.filter_type === 'all' ? 'All Customers' : selectedCampaign.filter_type + ': ' +
+        selectedCampaign.filter_value }}
       </div>
     </div>
 
@@ -654,7 +675,7 @@
       </div>
       <button class="modal-close" (click)="closeRecipientModal()">✕</button>
     </div>
-    
+
     <div class="modal-body recipient-list-body">
       <div class="recipient-table-wrap">
         <table class="recipient-table">
@@ -700,13 +721,13 @@
       <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
         Advanced Mode: Edit the raw HTML of the <b>Body section</b>. Header and Footer remain protected.
       </p>
-      
+
       <div class="form-group" style="margin-bottom: 0;">
         <div class="code-editor-toolbar">
           <span>📝 HTML Content</span>
           <button class="tb-btn tb-btn-small" (click)="htmlCode = ''">🗑️ Clear All</button>
         </div>
-        <textarea [(ngModel)]="htmlCode" rows="20" class="ec-input code-textarea" 
+        <textarea [(ngModel)]="htmlCode" rows="20" class="ec-input code-textarea"
           placeholder="Enter full body HTML here..."></textarea>
       </div>
 
@@ -715,5 +736,137 @@
         <button class="ec-btn ec-btn-primary" (click)="applyHtmlCode()" style="min-width: 150px;">Apply to Body</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ===================================================
+     DEFAULT EMAIL TEMPLATES (Hidden)
+==================================================== -->
+<div style="display:none">
+  <div #defaultHeaderTpl>
+    <div
+      style="padding: 35px 40px; border-bottom: 4px solid rgba(0,0,0,0.15); font-family: 'Segoe UI', Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+      <table style="width:100%;" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="vertical-align: middle;">
+            <div
+              style="font-size: 28px; font-weight: 900; color: #ffffff; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;">
+              {{ campaign.from_name }}
+            </div>
+            <div
+              style="display: inline-block; padding: 4px 12px; background: rgba(0,0,0,0.2); border-radius: 4px; font-size: 13px; color: #4f75f6; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+              Technological Excellence in Automatic Plating Plants
+            </div>
+
+          </td>
+          <td style="text-align: right; vertical-align: middle;">
+            <div
+              style="display: inline-block; background: #ffffff; padding: 10px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2);">
+              <!-- IMPORTANT: Images in emails MUST use absolute public URLs -->
+              <img src="https://your-public-domain.com/assets/komal.jpg" style="height: 65px; display: block;" alt="Komal Logo">
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div style="height: 4px; background: rgba(255,255,255,0.05);"></div>
+  </div>
+
+  <div #defaultFooterTpl>
+    <div
+      style="background: #0d0d0d; color: #ffffff; padding: 20px 40px 15px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+
+      <!-- TOP ROW: BRANDING & SOCIALS -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="vertical-align: middle;">
+            <div style="font-size: 18px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">{{
+              campaign.from_name }}</div>
+          </td>
+          <td style="text-align: right; vertical-align: middle;">
+            <div style="display: inline-block;">
+              <!-- Facebook -->
+              <a id="social-link-fb" href="#" target="_blank" style="text-decoration:none; margin-left: 12px; display: inline-block;">
+                <div
+                  style="width: 28px; height: 28px; background: #1877F2; border-radius: 50%; text-align: center; line-height: 28px; box-shadow: 0 4px 10px rgba(24, 119, 242, 0.3);">
+                  <img src="https://img.icons8.com/ios-glyphs/60/ffffff/facebook-f.png" width="16" height="16" alt="FB"
+                    style="vertical-align: middle; display: inline-block;">
+                </div>
+              </a>
+              <!-- Instagram -->
+              <a id="social-link-ig" href="#" target="_blank" style="text-decoration:none; margin-left: 12px; display: inline-block;">
+                <div
+                  style="width: 28px; height: 28px; background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); border-radius: 50%; text-align: center; line-height: 28px; box-shadow: 0 4px 10px rgba(214, 36, 159, 0.3);">
+                  <img src="https://img.icons8.com/ios-glyphs/60/ffffff/instagram-new.png" width="16" height="16"
+                    alt="IG" style="vertical-align: middle; display: inline-block;">
+                </div>
+              </a>
+              <!-- LinkedIn -->
+              <a id="social-link-li" href="#" target="_blank" style="text-decoration:none; margin-left: 12px; display: inline-block;">
+                <div
+                  style="width: 28px; height: 28px; background: #0A66C2; border-radius: 50%; text-align: center; line-height: 28px; box-shadow: 0 4px 10px rgba(10, 102, 194, 0.3);">
+                  <img src="https://img.icons8.com/ios-glyphs/60/ffffff/linkedin-2.png" width="16" height="16" alt="LI"
+                    style="vertical-align: middle; display: inline-block;">
+                </div>
+              </a>
+              <!-- X (Twitter) -->
+              <a id="social-link-tw" href="#" target="_blank" style="text-decoration:none; margin-left: 12px; display: inline-block;">
+                <div
+                  style="width: 28px; height: 28px; background: #000000; border: 1px solid #333; border-radius: 50%; text-align: center; line-height: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                  <img src="https://img.icons8.com/ios-glyphs/60/ffffff/twitterx--v2.png" width="14" height="14" alt="X"
+                    style="vertical-align: middle; display: inline-block;">
+                </div>
+              </a>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- MIDDLE ROW: CONDENSED INFO -->
+      <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #222; padding-top: 12px;"
+        cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="width: 33%; vertical-align: top; padding-top: 12px; padding-right: 20px;">
+            <div style="font-size: 11px; color: #888; line-height: 1.5;">
+              <strong
+                style="color: #4f75f6; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 2px;">Works</strong>
+              W-336, TTC Indl. Estate, MIDC, Rabale,<br>Navi Mumbai - 400 701, India
+            </div>
+          </td>
+          <td
+            style="width: 33%; vertical-align: top; padding-top: 12px; padding-right: 20px; border-left: 1px solid #1a1a1a; padding-left: 20px;">
+            <div style="font-size: 11px; color: #888; line-height: 1.5;">
+              <strong
+                style="color: #4f75f6; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 2px;">Office</strong>
+              107, Metro Avenue, Andheri (E),<br>Mumbai - 400 099, India
+            </div>
+          </td>
+          <td
+            style="width: 34%; vertical-align: top; padding-top: 12px; border-left: 1px solid #1a1a1a; padding-left: 20px;">
+            <div style="font-size: 11px; color: #eee; margin-bottom: 4px;">
+              <span style="color: #aaa;">Ph:</span> <b>+91 93226 89980 <span style="color: #333;">|</span> 98211
+                27373</b>
+            </div>
+            <div style="font-size: 11px; margin-bottom: 4px;">
+              <a href="mailto:info@komalchemiequip.com"
+                style="color: #4f75f6; text-decoration: none; font-weight: 600;">info@komalchemiequip.com</a>
+            </div>
+            <div style="font-size: 11px;">
+              <a href="https://www.komalchemiequip.com" target="_blank"
+                style="color: #ffffff; text-decoration: none; font-weight: 600; border-bottom: 1px solid #4f75f6;">www.komalchemiequip.com</a>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- BOTTOM LEGAL -->
+      <div style="margin-top: 15px; border-top: 1px solid #1a1a1a; padding-top: 10px; text-align: center;">
+        <div style="font-size: 9px; color: #333; letter-spacing: 0.5px;">
+          &copy; {{ currentYear }} {{ campaign.from_name }}. Registered Customer Communication.
+        </div>
+      </div>
+
+    </div>
+    <div style="background: #4f75f6; height: 2px; width: 100%;"></div>
   </div>
 </div>

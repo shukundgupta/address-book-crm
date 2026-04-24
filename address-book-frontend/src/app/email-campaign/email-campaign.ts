@@ -13,9 +13,14 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 })
 export class EmailCampaignComponent implements OnInit, AfterViewInit {
 
-  @ViewChild('editorFrame')  editorFrame!:  ElementRef<HTMLIFrameElement>;
-  @ViewChild('headerFrame')  headerFrame!:  ElementRef<HTMLIFrameElement>;
-  @ViewChild('footerFrame')  footerFrame!:  ElementRef<HTMLIFrameElement>;
+  @ViewChild('editorFrame') editorFrame!: ElementRef<HTMLIFrameElement>;
+  @ViewChild('headerFrame') headerFrame!: ElementRef<HTMLIFrameElement>;
+  @ViewChild('footerFrame') footerFrame!: ElementRef<HTMLIFrameElement>;
+  
+  @ViewChild('defaultHeaderTpl') defaultHeaderTpl!: ElementRef<HTMLElement>;
+  @ViewChild('defaultFooterTpl') defaultFooterTpl!: ElementRef<HTMLElement>;
+
+  currentYear = new Date().getFullYear();
 
   /* ========================
      TABS
@@ -35,14 +40,18 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     customer_type: 'Existing',
     filter_type: 'all',
     filter_value: '',
-    from_name: ''
+    from_name: '',
+    social_fb: '',
+    social_ig: '',
+    social_li: '',
+    social_tw: ''
   };
 
   /* ========================
      A4 PREVIEW BINDINGS
   ======================== */
   previewHeaderHtml: SafeHtml = '';
-  previewBodyHtml: SafeHtml   = '';
+  previewBodyHtml: SafeHtml = '';
   previewFooterHtml: SafeHtml = '';
 
   /* ========================
@@ -73,7 +82,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   selectedCampaign: any = null;
   campaignLogs: any[] = [];
   detailLoading = false;
-  
+
   // Track if we are editing an existing draft
   currentCampaignId: number | null = null;
   saving = false;
@@ -83,24 +92,24 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
      RICH TEXT EDITOR STATE
   ======================== */
   editorReady = false;
-  currentFontSize  = '14px';
+  currentFontSize = '14px';
   currentFontFamily = 'Arial';
-  currentColor    = '#000000';
-  currentBgColor  = '#ffff00';
+  currentColor = '#000000';
+  currentBgColor = '#ffff00';
   tableRows = 3;
   tableCols = 3;
-  showTablePicker    = false;
-  showColorPicker    = false;
-  showBgColorPicker  = false;
-  showLinkDialog     = false;
-  showImageDialog    = false;
+  showTablePicker = false;
+  showColorPicker = false;
+  showBgColorPicker = false;
+  showLinkDialog = false;
+  showImageDialog = false;
   showHeaderImageDialog = false;
-  showHtmlDialog     = false;
-  linkUrl   = '';
-  linkText  = '';
-  imageUrl  = '';
-  htmlCode  = '';
-  headerImageUrl   = '';
+  showHtmlDialog = false;
+  linkUrl = '';
+  linkText = '';
+  imageUrl = '';
+  htmlCode = '';
+  headerImageUrl = '';
   headerImageWidth = 160;
 
   savedRange: Range | null = null;
@@ -109,7 +118,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     private emailService: EmailCampaignService,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   /* ========================
      INIT
@@ -253,30 +262,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
      APPLY DEFAULT HEADER TEMPLATE
   ======================== */
   applyHeaderTemplate(): void {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const companyName = user.company_name || this.campaign.from_name || 'Your Company';
-    const color = this.campaign.template_color;
-
-    const html = `
-      <div style="background:${color}; padding: 30px 40px; border-bottom: 5px solid rgba(0,0,0,0.1);">
-        <table style="width:100%;" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="vertical-align: middle;">
-              <div style="font-size: 32px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px;">
-                ${companyName}
-              </div>
-              <div style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 5px; font-style: italic;">
-                Innovation in Every Step
-              </div>
-            </td>
-            <td style="text-align: right; vertical-align: middle;">
-               <img src="/assets/komal.jpg" style="height: 70px; border-radius: 6px; background: #fff; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);" alt="Komal Logo">
-            </td>
-          </tr>
-        </table>
-      </div>
-      <div style="height: 1px; background: rgba(255,255,255,0.1);"></div>
-    `;
+    const html = this.defaultHeaderTpl?.nativeElement?.innerHTML || '';
 
     const iframe = this.headerFrame?.nativeElement;
     if (iframe) {
@@ -292,41 +278,10 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
      APPLY DEFAULT FOOTER TEMPLATE
   ======================== */
   applyFooterTemplate(): void {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const companyName = user.company_name || this.campaign.from_name || 'Your Company';
+    let html = this.defaultFooterTpl?.nativeElement?.innerHTML || '';
     
-    const html = `
-      <div style="background: #333; color: #fff; padding: 40px; font-family: sans-serif;">
-        <table style="width: 100%;" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="width: 60%; padding-right: 20px;">
-              <div style="font-size: 20px; font-weight: bold; border-bottom: 2px solid #555; padding-bottom: 10px; margin-bottom: 15px; color: #fff;">
-                ${companyName}
-              </div>
-              <div style="font-size: 13px; line-height: 1.8; color: #ccc;">
-                #48, Noothanchery, Madambakkam, Chennai - 600 126, India<br>
-                Ph: +91 97395 33800 | +91 95000 00000<br>
-                Email: hydrogenmktg@tiaano.com | Web: www.hydrogenanode.com
-              </div>
-            </td>
-            <td style="width: 40%; vertical-align: top; text-align: right;">
-              <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Connect With Us</div>
-              <div>
-                <a href="#" style="display:inline-block; margin-left: 10px; text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/174/174848.png" width="24" height="24" alt="FB"></a>
-                <a href="#" style="display:inline-block; margin-left: 10px; text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/174/174855.png" width="24" height="24" alt="IG"></a>
-                <a href="#" style="display:inline-block; margin-left: 10px; text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/3536/3536505.png" width="24" height="24" alt="LI"></a>
-                <a href="#" style="display:inline-block; margin-left: 10px; text-decoration:none;"><img src="https://cdn-icons-png.flaticon.com/32/733/733579.png" width="24" height="24" alt="TW"></a>
-              </div>
-            </td>
-          </tr>
-        </table>
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #444; font-size: 11px; color: #888; text-align: center;">
-          Copyright &copy; ${new Date().getFullYear()} ${companyName}. All rights reserved.<br>
-          You are receiving this email because you are a valued customer of ${companyName}.
-        </div>
-      </div>
-      <div style="background: #e0f7fa; height: 10px;"></div>
-    `;
+    // Inject current social links into the template before applying
+    html = this.injectSocialLinks(html);
 
     const iframe = this.footerFrame?.nativeElement;
     if (iframe) {
@@ -339,20 +294,65 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   }
 
   /* ========================
+     SYNC SOCIAL LINKS TO FOOTER IFRAME
+  ======================== */
+  syncSocialLinks(): void {
+    const iframe = this.footerFrame?.nativeElement;
+    if (!iframe) return;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    const links = [
+      { id: 'social-link-fb', url: this.campaign.social_fb },
+      { id: 'social-link-ig', url: this.campaign.social_ig },
+      { id: 'social-link-li', url: this.campaign.social_li },
+      { id: 'social-link-tw', url: this.campaign.social_tw }
+    ];
+
+    links.forEach(l => {
+      const el = doc.getElementById(l.id) as HTMLAnchorElement;
+      if (el) {
+        el.href = l.url || '#';
+      }
+    });
+
+    this.campaign.template_footer = doc.body.innerHTML;
+  }
+
+  private injectSocialLinks(html: string): string {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    const links = [
+      { id: 'social-link-fb', url: this.campaign.social_fb },
+      { id: 'social-link-ig', url: this.campaign.social_ig },
+      { id: 'social-link-li', url: this.campaign.social_li },
+      { id: 'social-link-tw', url: this.campaign.social_tw }
+    ];
+
+    links.forEach(l => {
+      const el = tempDiv.querySelector(`#${l.id}`) as HTMLAnchorElement;
+      if (el) el.href = l.url || '#';
+    });
+
+    return tempDiv.innerHTML;
+  }
+
+  /* ========================
      UPDATE A4 PREVIEW
   ======================== */
   updatePreview(): void {
     // Sync content from iframes
     const hDoc = this.headerFrame?.nativeElement?.contentDocument || this.headerFrame?.nativeElement?.contentWindow?.document;
-    const bDoc = this.editorFrame?.nativeElement?.contentDocument  || this.editorFrame?.nativeElement?.contentWindow?.document;
+    const bDoc = this.editorFrame?.nativeElement?.contentDocument || this.editorFrame?.nativeElement?.contentWindow?.document;
     const fDoc = this.footerFrame?.nativeElement?.contentDocument || this.footerFrame?.nativeElement?.contentWindow?.document;
 
     if (hDoc?.body) this.campaign.template_header = hDoc.body.innerHTML;
-    if (bDoc?.body) this.campaign.html_body        = bDoc.body.innerHTML;
-    if (fDoc?.body) this.campaign.template_footer  = fDoc.body.innerHTML;
+    if (bDoc?.body) this.campaign.html_body = bDoc.body.innerHTML;
+    if (fDoc?.body) this.campaign.template_footer = fDoc.body.innerHTML;
 
     this.previewHeaderHtml = this.sanitizer.bypassSecurityTrustHtml(this.campaign.template_header);
-    this.previewBodyHtml   = this.sanitizer.bypassSecurityTrustHtml(this.campaign.html_body);
+    this.previewBodyHtml = this.sanitizer.bypassSecurityTrustHtml(this.campaign.html_body);
     this.previewFooterHtml = this.sanitizer.bypassSecurityTrustHtml(this.campaign.template_footer);
   }
 
@@ -430,15 +430,15 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   /* ========================
      ALIGNMENT
   ======================== */
-  alignLeft()    { this.exec('justifyLeft'); }
-  alignCenter()  { this.exec('justifyCenter'); }
-  alignRight()   { this.exec('justifyRight'); }
+  alignLeft() { this.exec('justifyLeft'); }
+  alignCenter() { this.exec('justifyCenter'); }
+  alignRight() { this.exec('justifyRight'); }
   alignJustify() { this.exec('justifyFull'); }
 
   /* ========================
      LISTS
   ======================== */
-  insertBulletList()   { this.exec('insertUnorderedList'); }
+  insertBulletList() { this.exec('insertUnorderedList'); }
   insertNumberedList() { this.exec('insertOrderedList'); }
 
   /* ========================
@@ -467,8 +467,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
      INSERT LINK
   ======================== */
   openLinkDialog(): void {
-    const doc  = this.getDoc();
-    const sel  = doc?.getSelection();
+    const doc = this.getDoc();
+    const sel = doc?.getSelection();
     this.linkText = sel?.toString() || '';
     this.showLinkDialog = true;
   }
@@ -583,7 +583,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
 
     this.emailService.previewCampaign({
       customer_type: this.campaign.customer_type,
-      filter_type:  this.campaign.filter_type,
+      filter_type: this.campaign.filter_type,
       filter_value: this.campaign.filter_value
     }).subscribe({
       next: (data) => {
@@ -613,11 +613,11 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   sendCampaign(): void {
     // Sync from iframes before send
     const hDoc = this.headerFrame?.nativeElement?.contentDocument || this.headerFrame?.nativeElement?.contentWindow?.document;
-    const bDoc = this.editorFrame?.nativeElement?.contentDocument  || this.editorFrame?.nativeElement?.contentWindow?.document;
+    const bDoc = this.editorFrame?.nativeElement?.contentDocument || this.editorFrame?.nativeElement?.contentWindow?.document;
     const fDoc = this.footerFrame?.nativeElement?.contentDocument || this.footerFrame?.nativeElement?.contentWindow?.document;
     if (hDoc?.body) this.campaign.template_header = hDoc.body.innerHTML;
-    if (bDoc?.body) this.campaign.html_body        = bDoc.body.innerHTML;
-    if (fDoc?.body) this.campaign.template_footer  = fDoc.body.innerHTML;
+    if (bDoc?.body) this.campaign.html_body = bDoc.body.innerHTML;
+    if (fDoc?.body) this.campaign.template_footer = fDoc.body.innerHTML;
 
     const payload = {
       ...this.campaign,
@@ -625,8 +625,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     };
 
     if (!payload.campaign_name) { this.sendError = 'Campaign name is required'; return; }
-    if (!payload.subject)       { this.sendError = 'Subject is required'; return; }
-    if (!payload.html_body)     { this.sendError = 'Email body cannot be empty'; return; }
+    if (!payload.subject) { this.sendError = 'Subject is required'; return; }
+    if (!payload.html_body) { this.sendError = 'Email body cannot be empty'; return; }
 
     const recipientCount = this.preview?.total ? this.preview.total : 'all matching';
     const confirmMsg = `Send to ${recipientCount} recipients one-by-one (3s gap each)?\n\nEst. time: ~${this.preview?.estimatedMinutes || '?'} minutes.\n\nSending will run in background.`;
@@ -656,12 +656,12 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   saveDraft(): void {
     // Sync from iframes
     const hDoc = this.headerFrame?.nativeElement?.contentDocument || this.headerFrame?.nativeElement?.contentWindow?.document;
-    const bDoc = this.editorFrame?.nativeElement?.contentDocument  || this.editorFrame?.nativeElement?.contentWindow?.document;
+    const bDoc = this.editorFrame?.nativeElement?.contentDocument || this.editorFrame?.nativeElement?.contentWindow?.document;
     const fDoc = this.footerFrame?.nativeElement?.contentDocument || this.footerFrame?.nativeElement?.contentWindow?.document;
-    
+
     if (hDoc?.body) this.campaign.template_header = hDoc.body.innerHTML;
-    if (bDoc?.body) this.campaign.html_body        = bDoc.body.innerHTML;
-    if (fDoc?.body) this.campaign.template_footer  = fDoc.body.innerHTML;
+    if (bDoc?.body) this.campaign.html_body = bDoc.body.innerHTML;
+    if (fDoc?.body) this.campaign.template_footer = fDoc.body.innerHTML;
 
     if (!this.campaign.campaign_name) { alert('Please enter a campaign name'); return; }
 
@@ -699,7 +699,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
       next: (data) => {
         const fullCampaign = data.campaign;
         this.currentCampaignId = fullCampaign.id;
-        
+
         let body = fullCampaign.html_body || '';
         if (body.includes('class="email-body"')) {
           const match = body.match(/<div class="email-body">([\s\S]*?)<\/div>/i);
@@ -707,25 +707,29 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
         }
 
         this.campaign = {
-          campaign_name:   fullCampaign.campaign_name || '',
-          subject:         fullCampaign.subject || '',
-          html_body:       body,
+          campaign_name: fullCampaign.campaign_name || '',
+          subject: fullCampaign.subject || '',
+          html_body: body,
           template_header: fullCampaign.template_header || '',
           template_footer: fullCampaign.template_footer || '',
-          template_color:  fullCampaign.template_color || '#1e3a5f',
-          customer_type:   fullCampaign.customer_type || 'Existing',
-          filter_type:     fullCampaign.filter_type || 'all',
-          filter_value:    fullCampaign.filter_value || '',
-          from_name:       fullCampaign.from_name || ''
+          template_color: fullCampaign.template_color || '#1e3a5f',
+          customer_type: fullCampaign.customer_type || 'Existing',
+          filter_type: fullCampaign.filter_type || 'all',
+          filter_value: fullCampaign.filter_value || '',
+          from_name: fullCampaign.from_name || '',
+          social_fb: fullCampaign.social_fb || '',
+          social_ig: fullCampaign.social_ig || '',
+          social_li: fullCampaign.social_li || '',
+          social_tw: fullCampaign.social_tw || ''
         };
 
         // 1. Switch to Compose Tab first
         this.activeTab = 'compose';
-        
+
         // 2. Small delay to ensure iframes are visible and ready
         setTimeout(() => {
           const hDoc = this.headerFrame?.nativeElement?.contentDocument || this.headerFrame?.nativeElement?.contentWindow?.document;
-          const bDoc = this.editorFrame?.nativeElement?.contentDocument  || this.editorFrame?.nativeElement?.contentWindow?.document;
+          const bDoc = this.editorFrame?.nativeElement?.contentDocument || this.editorFrame?.nativeElement?.contentWindow?.document;
           const fDoc = this.footerFrame?.nativeElement?.contentDocument || this.footerFrame?.nativeElement?.contentWindow?.document;
 
           if (hDoc?.body) hDoc.body.innerHTML = this.campaign.template_header;
@@ -761,7 +765,11 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
       customer_type: 'Existing',
       filter_type: 'all',
       filter_value: '',
-      from_name: user.company_name || 'Our Company'
+      from_name: user.company_name || 'Our Company',
+      social_fb: '',
+      social_ig: '',
+      social_li: '',
+      social_tw: ''
     };
 
     const bDoc = this.getDoc();
@@ -819,8 +827,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.emailService.getCampaignDetail(id).subscribe({
       next: (data) => {
         this.selectedCampaign = data.campaign;
-        this.campaignLogs     = data.logs;
-        this.detailLoading    = false;
+        this.campaignLogs = data.logs;
+        this.detailLoading = false;
       },
       error: (err) => {
         console.error(err);
@@ -831,7 +839,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
 
   closeDetail(): void {
     this.selectedCampaign = null;
-    this.campaignLogs     = [];
+    this.campaignLogs = [];
   }
 
   /* ========================
@@ -851,9 +859,9 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'completed': return 'status-completed';
-      case 'sending':   return 'status-sending';
-      case 'failed':    return 'status-failed';
-      default:          return 'status-draft';
+      case 'sending': return 'status-sending';
+      case 'failed': return 'status-failed';
+      default: return 'status-draft';
     }
   }
 

@@ -35,9 +35,19 @@ function buildEmailHtml(templateHeader, htmlBody, templateFooter, templateColor)
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: Arial, Helvetica, sans-serif; background:#f4f4f4; }
     .email-wrapper { max-width:794px; margin:0 auto; background:#ffffff; }
-    .email-header { background:${accentColor}; padding:0; }
+    .email-header { 
+      background:${accentColor}; 
+      padding:0; 
+      -webkit-print-color-adjust: exact; 
+      print-color-adjust: exact;
+    }
     .email-body { padding:30px 40px; font-size:14px; color:#333; line-height:1.7; }
-    .email-footer { background:${accentColor}; padding:0; }
+    .email-footer { 
+      background:${accentColor}; 
+      padding:0; 
+      -webkit-print-color-adjust: exact; 
+      print-color-adjust: exact;
+    }
     table { border-collapse:collapse; width:100%; }
     td, th { border:1px solid #ccc; padding:8px; }
     img { max-width:100%; height:auto; }
@@ -200,7 +210,11 @@ router.post('/save', (req, res) => {
     template_header,
     template_footer,
     template_color,
-    from_name
+    from_name,
+    social_fb,
+    social_ig,
+    social_li,
+    social_tw
   } = req.body;
 
   const c_name   = campaign_name || 'Untitled Campaign';
@@ -213,6 +227,10 @@ router.post('/save', (req, res) => {
   const c_footer  = template_footer || '';
   const c_color   = template_color || '#1e3a5f';
   const c_from    = from_name || '';
+  const c_fb      = social_fb || '';
+  const c_ig      = social_ig || '';
+  const c_li      = social_li || '';
+  const c_tw      = social_tw || '';
 
   console.log(`📝 Save Draft: ID=${id}, Company=${company_id}, Name="${c_name}", From="${c_from}"`);
 
@@ -220,11 +238,12 @@ router.post('/save', (req, res) => {
     const sql = `
       UPDATE email_campaigns SET
         campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
-        customer_type = ?, from_name = ?, template_header = ?, template_footer = ?, template_color = ?,
+        customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
+        template_header = ?, template_footer = ?, template_color = ?,
         status = 'draft'
       WHERE id = ? AND company_id = ?
     `;
-    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_header, c_footer, c_color, id, company_id];
+    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, id, company_id];
     console.log('📝 Executing UPDATE Query...');
     
     db.query(sql, params, (err, result) => {
@@ -241,10 +260,10 @@ router.post('/save', (req, res) => {
   } else {
     const sql = `
       INSERT INTO email_campaigns
-        (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, template_header, template_footer, template_color, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+        (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
     `;
-    const params = [company_id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_header, c_footer, c_color];
+    const params = [company_id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color];
     console.log('📝 Executing INSERT Query...');
 
     db.query(sql, params, (err, result) => {
@@ -278,7 +297,11 @@ router.post('/send', async (req, res) => {
     from_name,
     template_header,
     template_footer,
-    template_color
+    template_color,
+    social_fb,
+    social_ig,
+    social_li,
+    social_tw
   } = req.body;
 
   if (!subject || !html_body || !campaign_name) {
@@ -323,13 +346,15 @@ router.post('/send', async (req, res) => {
       const updateSql = `
         UPDATE email_campaigns SET
           campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
-          customer_type = ?, template_header = ?, template_footer = ?, template_color = ?,
+          customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
+          template_header = ?, template_footer = ?, template_color = ?,
           total_recipients = ?, total_batches = ?, status = 'sending', created_at = NOW()
         WHERE id = ? AND company_id = ?
       `;
       db.query(updateSql, [
         campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
-        customer_type || 'Existing', template_header, template_footer, template_color,
+        customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
+        template_header, template_footer, template_color,
         totalRecipients, totalRecipients, id, company_id
       ], (err) => {
         if (err) return res.status(500).json({ message: 'Failed to update campaign status' });
@@ -339,12 +364,13 @@ router.post('/send', async (req, res) => {
       // CREATE NEW CAMPAIGN RECORD
       const campaignSql = `
         INSERT INTO email_campaigns
-          (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, template_header, template_footer, template_color, total_recipients, total_batches, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
+          (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, total_recipients, total_batches, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
       `;
       db.query(campaignSql, [
         company_id, campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
-        customer_type || 'Existing', template_header, template_footer, template_color,
+        customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
+        template_header, template_footer, template_color,
         totalRecipients, totalRecipients
       ], (err, result) => {
         if (err) return res.status(500).json({ message: 'Failed to create campaign' });

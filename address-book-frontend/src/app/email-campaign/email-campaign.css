@@ -1389,3 +1389,39 @@
     table-layout: fixed !important; /* Force tables to respect container width */
   }
 }
+
+/* ========================
+   SOCIAL LINKS CARD
+======================== */
+.social-links-card {
+  background: #ffffff;
+  border-left: 5px solid #4f75f6;
+}
+
+.section-hint {
+  font-size: 12px;
+  color: #718096;
+  margin-top: -10px;
+  margin-bottom: 15px;
+}
+
+.social-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  vertical-align: middle;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.social-icon.fb { background-image: url('https://img.icons8.com/ios-glyphs/30/1877F2/facebook-f.png'); }
+.social-icon.ig { background-image: url('https://img.icons8.com/ios-glyphs/30/d6249f/instagram-new.png'); }
+.social-icon.li { background-image: url('https://img.icons8.com/ios-glyphs/30/0A66C2/linkedin-2.png'); }
+.social-icon.tw { background-image: url('https://img.icons8.com/ios-glyphs/30/000000/twitterx--v2.png'); }
+
+.social-links-card .ec-input {
+  background: #fdfdfd;
+  font-family: monospace;
+  font-size: 13px;
+}
