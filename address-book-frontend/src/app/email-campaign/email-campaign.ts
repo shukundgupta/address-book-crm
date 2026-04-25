@@ -64,7 +64,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     },
     2: { // Arnav Agencies
       name: 'Arnav Agencies',
-      logo: '/assets/anrav.png',
+      logo: 'https://arnavagencies.com/wp-content/uploads/2023/06/AA-logo-1.png',
       tagline: 'House of Supplies for Metal Finishing & Electroplating Industries',
       accent: '#e53935', // Professional Red
       address: '107, Metro Avenue, South Side of "WEH" Metro Station,<br> Chakala, Andheri (E), Mumbai - 400 099, India',
