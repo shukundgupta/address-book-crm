@@ -16,7 +16,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   @ViewChild('editorFrame') editorFrame!: ElementRef<HTMLIFrameElement>;
   @ViewChild('headerFrame') headerFrame!: ElementRef<HTMLIFrameElement>;
   @ViewChild('footerFrame') footerFrame!: ElementRef<HTMLIFrameElement>;
-  
+
   @ViewChild('defaultHeaderTpl') defaultHeaderTpl!: ElementRef<HTMLElement>;
   @ViewChild('defaultFooterTpl') defaultFooterTpl!: ElementRef<HTMLElement>;
 
@@ -36,7 +36,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     html_body: '',
     template_header: '',
     template_footer: '',
-    template_color: '#1e3a5f',
+    template_color: '#000099',
     customer_type: 'Existing',
     filter_type: 'all',
     filter_value: '',
@@ -45,6 +45,33 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     social_ig: '',
     social_li: '',
     social_tw: ''
+  };
+
+  /* ========================
+     COMPANY CONFIGURATION
+  ======================== */
+  currentCompany: any = null;
+  companyConfig: any = {
+    1: { // Komal Chemiequip Pvt. Ltd.
+      name: 'Komal Chemiequip Pvt. Ltd.',
+      logo: '/assets/komal.jpg',
+      tagline: 'Technological Excellence in Automatic Plating Plants',
+      accent: '#000099',
+      address: '#48, Noothanchery, Madambakkam, Chennai - 600 126, India',
+      phone: '+91 97395 33800 | +91 95000 00000',
+      email: 'hydrogenmktg@tiaano.com',
+      web: 'www.hydrogenanode.com'
+    },
+    2: { // Arnav Agencies
+      name: 'Arnav Agencies',
+      logo: '/assets/anrav.png',
+      tagline: 'House of Supplies for Metal Finishing & Electroplating Industries',
+      accent: '#e53935', // Professional Red
+      address: '107, Metro Avenue, South Side of "WEH" Metro Station,<br> Chakala, Andheri (E), Mumbai - 400 099, India',
+      phone: '+91 98211 27373',
+      email: 'info@arnavagencies.com',
+      web: 'www.arnavagencies.com'
+    }
   };
 
   /* ========================
@@ -127,7 +154,11 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.loadFilterOptions();
     this.loadHistory();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    this.campaign.from_name = user.company_name || 'Our Company';
+    const cid = user.company_id || 1;
+    this.currentCompany = this.companyConfig[cid] || this.companyConfig[1];
+
+    this.campaign.from_name = user.company_name || this.currentCompany.name;
+    this.campaign.template_color = this.currentCompany.accent;
   }
 
   ngAfterViewInit(): void {
@@ -234,17 +265,17 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
         <style>
           body {
             margin: 0;
-            padding: 14px 20px;
+            padding: 0;
             font-family: Arial, sans-serif;
             font-size: 13px;
-            color: #fff;
+            color: #333;
             background: ${bgColor};
             min-height: 60px;
             outline: none;
             line-height: 1.5;
           }
           img { max-height: 80px; max-width: 100%; }
-          a { color: #fff; text-decoration: underline; }
+          a { color: #000099; text-decoration: underline; }
           * { box-sizing: border-box; }
         </style>
       </head>
@@ -279,7 +310,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   ======================== */
   applyFooterTemplate(): void {
     let html = this.defaultFooterTpl?.nativeElement?.innerHTML || '';
-    
+
     // Inject current social links into the template before applying
     html = this.injectSocialLinks(html);
 
@@ -322,7 +353,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   private injectSocialLinks(html: string): string {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
-    
+
     const links = [
       { id: 'social-link-fb', url: this.campaign.social_fb },
       { id: 'social-link-ig', url: this.campaign.social_ig },
@@ -347,9 +378,9 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     const bDoc = this.editorFrame?.nativeElement?.contentDocument || this.editorFrame?.nativeElement?.contentWindow?.document;
     const fDoc = this.footerFrame?.nativeElement?.contentDocument || this.footerFrame?.nativeElement?.contentWindow?.document;
 
-    if (hDoc?.body) this.campaign.template_header = hDoc.body.innerHTML;
+    if (hDoc?.body) this.campaign.template_header = hDoc.body.innerHTML.trim();
     if (bDoc?.body) this.campaign.html_body = bDoc.body.innerHTML;
-    if (fDoc?.body) this.campaign.template_footer = fDoc.body.innerHTML;
+    if (fDoc?.body) this.campaign.template_footer = fDoc.body.innerHTML.trim();
 
     this.previewHeaderHtml = this.sanitizer.bypassSecurityTrustHtml(this.campaign.template_header);
     this.previewBodyHtml = this.sanitizer.bypassSecurityTrustHtml(this.campaign.html_body);
@@ -761,7 +792,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
       html_body: '',
       template_header: '',
       template_footer: '',
-      template_color: '#1e3a5f',
+      template_color: '#ffffff',
       customer_type: 'Existing',
       filter_type: 'all',
       filter_value: '',
