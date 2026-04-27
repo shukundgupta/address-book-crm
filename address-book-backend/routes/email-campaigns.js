@@ -1,6 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const db = require('../config/db');
 const { getTransporter } = require('../utils/mailer');
+const auth = require('../middleware/authMiddleware');
+
+
+// Multer storage for attachments
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/attachments');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
+
+// Protect all routes with auth middleware
+router.use(auth);
+
 
 /* ==============================
    EMAIL TRANSPORTER (LEGACY - REMOVED)
@@ -65,7 +85,7 @@ function buildEmailHtml(templateHeader, htmlBody, templateFooter, templateColor)
 /* ==============================
    HELPER: Send one email to one recipient (individual)
 ================================ */
-async function sendOneEmail(recipient, subject, fullHtml, fromName, campaignId, transporter, fromEmail) {
+async function sendOneEmail(recipient, subject, fullHtml, fromName, campaignId, transporter, fromEmail, attachments) {
   try {
     // Personalise content with recipient variables
     let personalised = fullHtml
@@ -78,7 +98,8 @@ async function sendOneEmail(recipient, subject, fullHtml, fromName, campaignId, 
       from: `"${fromName}" <${fromEmail}>`,
       to: recipient.email,
       subject: subject,
-      html: personalised
+      html: personalised,
+      attachments: attachments // Pass attachments to nodemailer
     });
 
     db.query(
@@ -189,8 +210,9 @@ router.get('/filter-options', (req, res) => {
 /* ==============================
    SAVE DRAFT (Create or Update)
 ================================ */
-router.post('/save', (req, res) => {
-  console.log('📬 Save Request Body:', JSON.stringify(req.body, null, 2));
+router.post('/save', upload.array('attachments'), (req, res) => {
+  console.log('📬 Save Request Body:', req.body);
+  console.log('📂 Save Request Files:', req.files);
 
   const company_id = req.user.company_id;
   const {
@@ -210,6 +232,26 @@ router.post('/save', (req, res) => {
     social_li,
     social_tw
   } = req.body;
+
+  // Process attachments (Merge existing ones with new uploads)
+  let attachments = [];
+  if (req.body.existing_attachments) {
+    try {
+      attachments = JSON.parse(req.body.existing_attachments);
+    } catch (e) {
+      console.error('Error parsing existing_attachments:', e);
+    }
+  }
+
+  if (req.files && req.files.length > 0) {
+    const newFiles = req.files.map(f => ({
+      filename: f.originalname,
+      path: f.path
+    }));
+    attachments = [...attachments, ...newFiles];
+  }
+
+  const attachmentData = attachments.length > 0 ? JSON.stringify(attachments) : null;
 
   const c_name   = campaign_name || 'Untitled Campaign';
   const c_subject = subject || '';
@@ -234,10 +276,10 @@ router.post('/save', (req, res) => {
         campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
         customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
         template_header = ?, template_footer = ?, template_color = ?,
-        status = 'draft'
+        attachments = ?, status = 'draft'
       WHERE id = ? AND company_id = ? AND user_id = ?
     `;
-    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, id, company_id, req.user.id];
+    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, attachmentData, id, company_id, req.user.id];
     console.log('📝 Executing UPDATE Query...');
     
     db.query(sql, params, (err, result) => {
@@ -254,10 +296,10 @@ router.post('/save', (req, res) => {
   } else {
     const sql = `
       INSERT INTO email_campaigns
-        (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+        (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, attachments, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
     `;
-    const params = [company_id, req.user.id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color];
+    const params = [company_id, req.user.id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, attachmentData];
     console.log('📝 Executing INSERT Query...');
 
     db.query(sql, params, (err, result) => {
@@ -277,11 +319,10 @@ router.post('/save', (req, res) => {
 /* ==============================
    SEND CAMPAIGN (Individual: 1 email per recipient, 3s delay)
 ================================ */
-router.post('/send', async (req, res) => {
-
+router.post('/send', upload.array('attachments'), async (req, res) => {
   const company_id = req.user.company_id;
   const {
-    id, // optional: if sending from a previously saved draft
+    id,
     campaign_name,
     subject,
     html_body,
@@ -297,6 +338,26 @@ router.post('/send', async (req, res) => {
     social_li,
     social_tw
   } = req.body;
+
+  // Process attachments (Merge existing ones with new uploads)
+  let attachmentsForMail = [];
+  if (req.body.existing_attachments) {
+    try {
+      attachmentsForMail = JSON.parse(req.body.existing_attachments);
+    } catch (e) {
+      console.error('Error parsing existing_attachments in /send:', e);
+    }
+  }
+
+  if (req.files && req.files.length > 0) {
+    const newFiles = req.files.map(f => ({
+      filename: f.originalname,
+      path: f.path
+    }));
+    attachmentsForMail = [...attachmentsForMail, ...newFiles];
+  }
+
+  const attachmentData = attachmentsForMail.length > 0 ? JSON.stringify(attachmentsForMail) : null;
 
   if (!subject || !html_body || !campaign_name) {
     return res.status(400).json({ message: 'Campaign name, subject and body are required' });
@@ -342,33 +403,33 @@ router.post('/send', async (req, res) => {
           campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
           customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
           template_header = ?, template_footer = ?, template_color = ?,
-          total_recipients = ?, total_batches = ?, status = 'sending', created_at = NOW()
+          total_recipients = ?, total_batches = ?, attachments = ?, status = 'sending', created_at = NOW()
         WHERE id = ? AND company_id = ? AND user_id = ?
       `;
       db.query(updateSql, [
         campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
         customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
         template_header, template_footer, template_color,
-        totalRecipients, totalRecipients, id, company_id, req.user.id
+        totalRecipients, totalRecipients, attachmentData, id, company_id, req.user.id
       ], (err) => {
         if (err) return res.status(500).json({ message: 'Failed to update campaign status' });
-        startBackgroundSending(id, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res, company_id);
+        startBackgroundSending(id, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res, company_id, attachmentsForMail);
       });
     } else {
       // CREATE NEW CAMPAIGN RECORD
       const campaignSql = `
         INSERT INTO email_campaigns
-          (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, total_recipients, total_batches, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
+          (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, total_recipients, total_batches, attachments, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
       `;
       db.query(campaignSql, [
         company_id, req.user.id, campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
         customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
         template_header, template_footer, template_color,
-        totalRecipients, totalRecipients
+        totalRecipients, totalRecipients, attachmentData
       ], (err, result) => {
         if (err) return res.status(500).json({ message: 'Failed to create campaign' });
-        startBackgroundSending(result.insertId, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res, company_id);
+        startBackgroundSending(result.insertId, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res, company_id, attachmentsForMail);
       });
     }
   });
@@ -378,7 +439,7 @@ router.post('/send', async (req, res) => {
 /**
  * Helper to handle background sending logic
  */
-function startBackgroundSending(campaignId, recipients, subject, fullHtml, fromName, totalRecipients, DELAY_MS, estimatedMinutes, res, companyId) {
+function startBackgroundSending(campaignId, recipients, subject, fullHtml, fromName, totalRecipients, DELAY_MS, estimatedMinutes, res, companyId, attachments) {
   // Respond immediately
   res.json({
     message: 'Campaign started! Sending one email at a time.',
@@ -408,7 +469,8 @@ function startBackgroundSending(campaignId, recipients, subject, fullHtml, fromN
             fromName || 'AddressBook CRM',
             campaignId,
             transporter,
-            fromEmail
+            fromEmail,
+            attachments
           );
 
           if (result.success) totalSent++;

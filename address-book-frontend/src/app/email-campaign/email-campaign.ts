@@ -27,9 +27,6 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   ======================== */
   activeTab: 'compose' | 'preview' | 'history' = 'compose';
 
-  /* ========================
-     CAMPAIGN FORM
-  ======================== */
   campaign = {
     campaign_name: '',
     subject: '',
@@ -46,6 +43,9 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     social_li: '',
     social_tw: ''
   };
+  
+  selectedFiles: any[] = [];
+  existingAttachments: any[] = []; // Files already uploaded (for drafts)
 
   /* ========================
      COMPANY CONFIGURATION
@@ -587,6 +587,54 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   }
 
   /* ========================
+     ATTACHMENTS
+  ======================== */
+  onFileSelected(event: any): void {
+    const files = event.target.files;
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        this.selectedFiles.push(files[i]);
+      }
+    }
+    event.target.value = ''; // Reset input
+  }
+
+  removeAttachment(index: number): void {
+    this.selectedFiles.splice(index, 1);
+  }
+
+  removeExistingAttachment(index: number): void {
+    this.existingAttachments.splice(index, 1);
+  }
+
+  private buildFormData(): FormData {
+    const formData = new FormData();
+    
+    // Basic fields
+    Object.keys(this.campaign).forEach(key => {
+      const val = (this.campaign as any)[key];
+      formData.append(key, val || '');
+    });
+
+    // ID if editing
+    if (this.currentCampaignId) {
+      formData.append('id', this.currentCampaignId.toString());
+    }
+
+    // New Files
+    this.selectedFiles.forEach(file => {
+      formData.append('attachments', file);
+    });
+
+    // Existing attachments (for drafts)
+    if (this.existingAttachments.length > 0) {
+      formData.append('existing_attachments', JSON.stringify(this.existingAttachments));
+    }
+
+    return formData;
+  }
+
+  /* ========================
      LOAD FILTER OPTIONS
   ======================== */
   loadFilterOptions(): void {
@@ -650,25 +698,21 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     if (bDoc?.body) this.campaign.html_body = bDoc.body.innerHTML;
     if (fDoc?.body) this.campaign.template_footer = fDoc.body.innerHTML;
 
-    const payload = {
-      ...this.campaign,
-      id: this.currentCampaignId
-    };
+    if (!this.campaign.campaign_name) { this.sendError = 'Campaign name is required'; return; }
+    if (!this.campaign.subject) { this.sendError = 'Subject is required'; return; }
+    if (!this.campaign.html_body) { this.sendError = 'Email body cannot be empty'; return; }
 
-    if (!payload.campaign_name) { this.sendError = 'Campaign name is required'; return; }
-    if (!payload.subject) { this.sendError = 'Subject is required'; return; }
-    if (!payload.html_body) { this.sendError = 'Email body cannot be empty'; return; }
+    const formData = this.buildFormData();
 
     const recipientCount = this.preview?.total ? this.preview.total : 'all matching';
     const confirmMsg = `Send to ${recipientCount} recipients one-by-one (3s gap each)?\n\nEst. time: ~${this.preview?.estimatedMinutes || '?'} minutes.\n\nSending will run in background.`;
 
     if (!confirm(confirmMsg)) return;
 
-    this.sending = true;
     this.sendError = '';
     this.sendResult = null;
 
-    this.emailService.sendCampaign(payload).subscribe({
+    this.emailService.sendCampaign(formData).subscribe({
       next: (res) => {
         this.sendResult = res;
         this.sending = false;
@@ -699,12 +743,13 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.saving = true;
     this.saveSuccess = '';
 
-    const payload = { ...this.campaign, id: this.currentCampaignId };
+    const formData = this.buildFormData();
 
-    this.emailService.saveDraft(payload).subscribe({
+    this.emailService.saveDraft(formData).subscribe({
       next: (res) => {
         this.saving = false;
         this.currentCampaignId = res.id;
+        this.selectedFiles = []; // Clear selected files after successful save
         this.saveSuccess = 'Campaign saved as draft!';
         // Removed blocking alert to prevent UI from appearing "stuck"
         this.loadHistory();
@@ -754,6 +799,9 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
           social_tw: fullCampaign.social_tw || ''
         };
 
+        this.existingAttachments = JSON.parse(fullCampaign.attachments || '[]');
+        this.selectedFiles = [];
+
         // 1. Switch to Compose Tab first
         this.activeTab = 'compose';
 
@@ -802,6 +850,9 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
       social_li: '',
       social_tw: ''
     };
+
+    this.selectedFiles = [];
+    this.existingAttachments = [];
 
     const bDoc = this.getDoc();
     if (bDoc) bDoc.body.innerHTML = '';
@@ -915,5 +966,15 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
   ======================== */
   printPreview(): void {
     window.print();
+  }
+
+  parsedAttachments(attachments: any): any[] {
+    if (!attachments) return [];
+    if (Array.isArray(attachments)) return attachments;
+    try {
+      return JSON.parse(attachments);
+    } catch (e) {
+      return [];
+    }
   }
 }

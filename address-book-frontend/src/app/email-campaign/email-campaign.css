@@ -1425,3 +1425,130 @@
   font-family: monospace;
   font-size: 13px;
 }
+
+/* ================================================
+   ATTACHMENTS SECTION
+================================================ */
+.attachments-card {
+  border-left: 5px solid #6366f1;
+}
+
+.attachment-upload-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.attachment-upload-zone:hover {
+  border-color: #6366f1;
+  background: #f5f3ff;
+}
+
+.upload-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.upload-icon {
+  font-size: 32px;
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.list-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  animation: slideIn 0.2s ease-out;
+}
+
+.attachment-item.existing {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.file-icon {
+  font-size: 16px;
+}
+
+.file-name {
+  flex: 1;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.remove-btn:hover {
+  color: #ef4444;
+}
+
+.meta-item.full-width {
+  flex: 0 0 100%;
+}
+
+.meta-attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.meta-att-badge {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

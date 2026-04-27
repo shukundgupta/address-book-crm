@@ -76,6 +76,41 @@
               class="ec-input" />
           </div>
         </div>
+  
+        <!-- ATTACHMENTS SECTION -->
+        <div class="ec-card attachments-card">
+          <h3 class="card-title">📎 File Attachments</h3>
+          <p class="section-hint">Add PDF, Images, or Documents (max 5MB each)</p>
+          
+          <div class="attachment-upload-zone" (click)="fileInput.click()">
+            <input type="file" #fileInput style="display:none" (change)="onFileSelected($event)" multiple>
+            <div class="upload-prompt">
+              <span class="upload-icon">📁</span>
+              <span>Click to select files or drag and drop</span>
+            </div>
+          </div>
+
+          <!-- LIST OF NEW FILES -->
+          <div *ngIf="selectedFiles.length > 0" class="attachment-list">
+            <div class="list-label">New Files to Upload:</div>
+            <div *ngFor="let file of selectedFiles; let i = index" class="attachment-item">
+              <span class="file-icon">📄</span>
+              <span class="file-name" [title]="file.name">{{ file.name }}</span>
+              <span class="file-size">({{ (file.size / 1024).toFixed(1) }} KB)</span>
+              <button class="remove-btn" (click)="removeAttachment(i)">✕</button>
+            </div>
+          </div>
+
+          <!-- LIST OF EXISTING FILES (For Drafts) -->
+          <div *ngIf="existingAttachments.length > 0" class="attachment-list existing-list">
+            <div class="list-label">Existing Attachments:</div>
+            <div *ngFor="let file of existingAttachments; let i = index" class="attachment-item existing">
+              <span class="file-icon">✅</span>
+              <span class="file-name" [title]="file.filename">{{ file.filename }}</span>
+              <button class="remove-btn" (click)="removeExistingAttachment(i)">✕</button>
+            </div>
+          </div>
+        </div>
 
         <!-- SOCIAL MEDIA LINKS -->
         <div class="ec-card social-links-card">
@@ -599,6 +634,14 @@
       <div class="meta-item"><b>Filter:</b>
         {{ selectedCampaign.filter_type === 'all' ? 'All Customers' : selectedCampaign.filter_type + ': ' +
         selectedCampaign.filter_value }}
+      </div>
+      <div *ngIf="selectedCampaign.attachments" class="meta-item full-width">
+        <b>Attachments:</b>
+        <div class="meta-attachment-list">
+          <span *ngFor="let att of parsedAttachments(selectedCampaign.attachments)" class="meta-att-badge">
+            📎 {{ att.filename }}
+          </span>
+        </div>
       </div>
     </div>
 
