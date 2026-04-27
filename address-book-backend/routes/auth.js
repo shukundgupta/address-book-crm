@@ -4,18 +4,13 @@ const router = express.Router();
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { getTransporter } = require('../utils/mailer');
 
 /* ==============================
-   EMAIL CONFIG (IMPORTANT)
+   EMAIL CONFIG (LEGACY - REMOVED)
+   Moved to utils/mailer.js for dynamic company-based config
 ================================ */
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'shukundgupta@gmail.com',          // 🔁 replace
-    pass: 'alaoyudjoktzcwrk'              // 🔁 Gmail App Password
-  }
-});
+// const transporter = nodemailer.createTransport({ ... });
 
 /* ==============================
    SEND OTP
@@ -53,32 +48,37 @@ router.post('/send-otp', (req, res) => {
       /* ==============================
          SEND EMAIL
       ================================= */
-      const mailOptions = {
-        from: 'your-email@gmail.com',
-        to: email,
-        subject: 'Your OTP Code - AddressBook CRM',
-        html: `
-          <div style="font-family: Arial; text-align:center;">
-            <h2>🔐 OTP Verification</h2>
-            <p>Your OTP is:</p>
-            <h1 style="letter-spacing:5px;">${otp}</h1>
-            <p>This OTP will expire in 5 minutes.</p>
-          </div>
-        `
-      };
+      (async () => {
+        try {
+          const { transporter, fromEmail } = await getTransporter(company_id);
+          
+          const mailOptions = {
+            from: `"AddressBook CRM" <${fromEmail}>`,
+            to: email,
+            subject: 'Your OTP Code - AddressBook CRM',
+            html: `
+              <div style="font-family: Arial; text-align:center;">
+                <h2>🔐 OTP Verification</h2>
+                <p>Your OTP is:</p>
+                <h1 style="letter-spacing:5px;">${otp}</h1>
+                <p>This OTP will expire in 5 minutes.</p>
+              </div>
+            `
+          };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-
-        if (error) {
-          console.error('EMAIL ERROR:', error);
-          return res.status(500).json({ message: 'Failed to send OTP' });
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              console.error('EMAIL ERROR:', error);
+              return res.status(500).json({ message: 'Failed to send OTP' });
+            }
+            console.log('Email sent:', info.response);
+            res.json({ message: 'OTP sent successfully' });
+          });
+        } catch (err) {
+          console.error('MAILER ERROR:', err);
+          res.status(500).json({ message: 'Mail server error' });
         }
-
-        console.log('Email sent:', info.response);
-
-        res.json({ message: 'OTP sent successfully' });
-
-      });
+      })();
 
     });
   });

@@ -49,16 +49,17 @@ export class CustomerForm implements OnInit {
   ) {
 
     this.customerForm = this.fb.group({
-      title: ['Mr'],
-      company_name: [''],
-      customer_type: ['New'],
+      title: ['Mr', Validators.required],
+      company_name: ['', Validators.required],
+      customer_type: ['New', Validators.required],
       address: [''],
       state: [''],
       city: [''],
       pincode: [''],
       email: ['', [Validators.email]],
-      contact_person: [''],
-      contact_number: ['', [Validators.pattern('^[0-9]{10}$')]]
+      contact_person: ['', Validators.required],
+      contact_number: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      tags: ['']
     });
 
   }
@@ -176,11 +177,9 @@ export class CustomerForm implements OnInit {
 
     this.loading = true;
 
-    this.service.getAll().subscribe({
+    this.service.getById(id).subscribe({
 
-      next: (data: any[]) => {
-
-        const customer = data.find(c => c.id == id);
+      next: (customer: any) => {
 
         if (customer) {
           this.customerForm.patchValue(customer);

@@ -1,24 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
-const db = require('../config/db');
-const auth = require('../middleware/authMiddleware');
+const { getTransporter } = require('../utils/mailer');
 
 /* ==============================
-   AUTH (ALL ROUTES PROTECTED)
+   EMAIL TRANSPORTER (LEGACY - REMOVED)
+   Moved to utils/mailer.js for dynamic company-based config
 ================================ */
-router.use(auth);
-
-/* ==============================
-   EMAIL TRANSPORTER
-================================ */
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'shukundgupta@gmail.com',
-    pass: 'alaoyudjoktzcwrk'
-  }
-});
+// const transporter = nodemailer.createTransport({ ... });
+//   service: 'gmail',
+//   auth: {
+//     user: 'shukundgupta@gmail.com',
+//     pass: 'alaoyudjoktzcwrk'
+//   }
+// });
 
 /* ==============================
    HELPER: Build final email HTML with template
@@ -71,7 +65,7 @@ function buildEmailHtml(templateHeader, htmlBody, templateFooter, templateColor)
 /* ==============================
    HELPER: Send one email to one recipient (individual)
 ================================ */
-async function sendOneEmail(recipient, subject, fullHtml, fromName, campaignId) {
+async function sendOneEmail(recipient, subject, fullHtml, fromName, campaignId, transporter, fromEmail) {
   try {
     // Personalise content with recipient variables
     let personalised = fullHtml
@@ -81,7 +75,7 @@ async function sendOneEmail(recipient, subject, fullHtml, fromName, campaignId) 
       .replace(/{{state}}/g, recipient.state || '');
 
     await transporter.sendMail({
-      from: `"${fromName}" <shukundgupta@gmail.com>`,
+      from: `"${fromName}" <${fromEmail}>`,
       to: recipient.email,
       subject: subject,
       html: personalised
@@ -241,9 +235,9 @@ router.post('/save', (req, res) => {
         customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
         template_header = ?, template_footer = ?, template_color = ?,
         status = 'draft'
-      WHERE id = ? AND company_id = ?
+      WHERE id = ? AND company_id = ? AND user_id = ?
     `;
-    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, id, company_id];
+    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, id, company_id, req.user.id];
     console.log('📝 Executing UPDATE Query...');
     
     db.query(sql, params, (err, result) => {
@@ -260,10 +254,10 @@ router.post('/save', (req, res) => {
   } else {
     const sql = `
       INSERT INTO email_campaigns
-        (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+        (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
     `;
-    const params = [company_id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color];
+    const params = [company_id, req.user.id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color];
     console.log('📝 Executing INSERT Query...');
 
     db.query(sql, params, (err, result) => {
@@ -349,32 +343,32 @@ router.post('/send', async (req, res) => {
           customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
           template_header = ?, template_footer = ?, template_color = ?,
           total_recipients = ?, total_batches = ?, status = 'sending', created_at = NOW()
-        WHERE id = ? AND company_id = ?
+        WHERE id = ? AND company_id = ? AND user_id = ?
       `;
       db.query(updateSql, [
         campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
         customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
         template_header, template_footer, template_color,
-        totalRecipients, totalRecipients, id, company_id
+        totalRecipients, totalRecipients, id, company_id, req.user.id
       ], (err) => {
         if (err) return res.status(500).json({ message: 'Failed to update campaign status' });
-        startBackgroundSending(id, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res);
+        startBackgroundSending(id, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res, company_id);
       });
     } else {
       // CREATE NEW CAMPAIGN RECORD
       const campaignSql = `
         INSERT INTO email_campaigns
-          (company_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, total_recipients, total_batches, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
+          (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, total_recipients, total_batches, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
       `;
       db.query(campaignSql, [
-        company_id, campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
+        company_id, req.user.id, campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
         customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
         template_header, template_footer, template_color,
         totalRecipients, totalRecipients
       ], (err, result) => {
         if (err) return res.status(500).json({ message: 'Failed to create campaign' });
-        startBackgroundSending(result.insertId, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res);
+        startBackgroundSending(result.insertId, recipients, subject, fullHtml, from_name, totalRecipients, DELAY_MS, estimatedMinutes, res, company_id);
       });
     }
   });
@@ -384,7 +378,7 @@ router.post('/send', async (req, res) => {
 /**
  * Helper to handle background sending logic
  */
-function startBackgroundSending(campaignId, recipients, subject, fullHtml, fromName, totalRecipients, DELAY_MS, estimatedMinutes, res) {
+function startBackgroundSending(campaignId, recipients, subject, fullHtml, fromName, totalRecipients, DELAY_MS, estimatedMinutes, res, companyId) {
   // Respond immediately
   res.json({
     message: 'Campaign started! Sending one email at a time.',
@@ -398,23 +392,32 @@ function startBackgroundSending(campaignId, recipients, subject, fullHtml, fromN
     let totalSent = 0;
     let totalFailed = 0;
 
-    for (let i = 0; i < recipients.length; i++) {
-        const recipient = recipients[i];
-        db.query(
-          `UPDATE email_campaigns SET current_batch = ?, sent_count = ?, failed_count = ? WHERE id = ?`,
-          [i + 1, totalSent, totalFailed, campaignId]
-        );
+    try {
+      // Get company-specific transporter
+      const { transporter, fromEmail } = await getTransporter(companyId);
 
-        const result = await sendOneEmail(
-          recipient, subject, fullHtml,
-          fromName || 'AddressBook CRM',
-          campaignId
-        );
+      for (let i = 0; i < recipients.length; i++) {
+          const recipient = recipients[i];
+          db.query(
+            `UPDATE email_campaigns SET current_batch = ?, sent_count = ?, failed_count = ? WHERE id = ?`,
+            [i + 1, totalSent, totalFailed, campaignId]
+          );
 
-        if (result.success) totalSent++;
-        else totalFailed++;
+          const result = await sendOneEmail(
+            recipient, subject, fullHtml,
+            fromName || 'AddressBook CRM',
+            campaignId,
+            transporter,
+            fromEmail
+          );
 
-        if (i < recipients.length - 1) await sleep(DELAY_MS);
+          if (result.success) totalSent++;
+          else totalFailed++;
+
+          if (i < recipients.length - 1) await sleep(DELAY_MS);
+      }
+    } catch (err) {
+      console.error('❌ Background Sending Error:', err);
     }
 
     db.query(
@@ -435,12 +438,12 @@ router.get('/history', (req, res) => {
     SELECT id, campaign_name, subject, filter_type, filter_value, customer_type, 
            total_recipients, sent_count, failed_count, status, created_at, from_name
     FROM email_campaigns
-    WHERE company_id = ?
+    WHERE company_id = ? AND user_id = ?
     ORDER BY created_at DESC
     LIMIT 50
   `;
 
-  db.query(sql, [company_id], (err, rows) => {
+  db.query(sql, [company_id, req.user.id], (err, rows) => {
     if (err) {
       console.error('❌ History DB Error:', err);
       return res.status(500).json({ message: 'DB error' });
@@ -459,9 +462,9 @@ router.get('/history/:id', (req, res) => {
   const company_id = req.user.company_id;
   const campaignId = req.params.id;
 
-  const campaignSql = `SELECT * FROM email_campaigns WHERE id = ? AND company_id = ?`;
+  const campaignSql = `SELECT * FROM email_campaigns WHERE id = ? AND company_id = ? AND user_id = ?`;
 
-  db.query(campaignSql, [campaignId, company_id], (err, campaign) => {
+  db.query(campaignSql, [campaignId, company_id, req.user.id], (err, campaign) => {
     if (err || !campaign.length) return res.status(404).json({ message: 'Campaign not found' });
 
     const logsSql = `SELECT * FROM campaign_logs WHERE campaign_id = ? ORDER BY sent_at DESC`;
@@ -485,7 +488,7 @@ router.delete('/history/:id', (req, res) => {
   db.query(`DELETE FROM campaign_logs WHERE campaign_id = ?`, [campaignId], (err) => {
     if (err) return res.status(500).json({ message: 'Failed to delete logs' });
 
-    db.query(`DELETE FROM email_campaigns WHERE id = ? AND company_id = ?`, [campaignId, company_id], (err) => {
+    db.query(`DELETE FROM email_campaigns WHERE id = ? AND company_id = ? AND user_id = ?`, [campaignId, company_id, req.user.id], (err) => {
       if (err) return res.status(500).json({ message: 'Failed to delete campaign' });
       res.json({ message: 'Campaign deleted successfully' });
     });

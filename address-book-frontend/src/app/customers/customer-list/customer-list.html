@@ -61,6 +61,15 @@
       <option value="Existing">Existing</option>
     </select>
 
+    <!-- Tags Filter -->
+    <select [(ngModel)]="filter.tags"
+            (change)="onFilterChange()">
+      <option value="">All Tags</option>
+      <option value="Plant">Plant</option>
+      <option value="Chemicals">Chemicals</option>
+      <option value="Consumables">Consumables</option>
+    </select>
+
     <!-- Buttons -->
     <button class="btn btn-search" (click)="search()">
       🔍 Search
@@ -88,7 +97,7 @@
   <!-- =========================
        CUSTOMER CARDS
   ========================== -->
-  <div class="card-container">
+  <div class="card-container" *ngIf="!loading && customers.length > 0">
 
     <div class="customer-card"
          *ngFor="let c of customers; let i = index">
@@ -109,6 +118,11 @@
                   'tag-existing': c.customer_type === 'Existing'
                 }">
             {{c.customer_type}}
+          </span>
+
+          <!-- CUSTOM TAG -->
+          <span class="tag tag-custom" *ngIf="c.tags">
+            {{c.tags}}
           </span>
 
           <!-- COPY -->
@@ -141,6 +155,37 @@
         <button class="btn-delete" (click)="deleteCustomer(c.id)">Delete</button>
       </div>
 
+    </div>
+
+  </div>
+
+  <!-- =========================
+       PAGINATION UI
+  ========================== -->
+  <div class="pagination-container" *ngIf="totalPages > 1 && !loading">
+    
+    <div class="pagination-info">
+      Showing Page <b>{{currentPage}}</b> of <b>{{totalPages}}</b> 
+      (Total <b>{{totalItems}}</b> Customers)
+    </div>
+
+    <div class="pagination-controls">
+      <button class="btn btn-nav" [disabled]="currentPage === 1" (click)="prevPage()">
+        « Previous
+      </button>
+
+      <div class="page-numbers">
+        <button *ngFor="let p of getPages()"
+                class="page-btn"
+                [class.active]="currentPage === p"
+                (click)="goToPage(p)">
+          {{p}}
+        </button>
+      </div>
+
+      <button class="btn btn-nav" [disabled]="currentPage === totalPages" (click)="nextPage()">
+        Next »
+      </button>
     </div>
 
   </div>

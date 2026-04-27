@@ -13,8 +13,13 @@ export class CustomerService {
   constructor(private http: HttpClient) {}
 
   /* GET ALL */
-  getAll(): Observable<any[]> {
-    return this.http.get<any[]>(this.api);
+  getAll(page: number = 1, limit: number = 10): Observable<any> {
+    return this.http.get<any>(`${this.api}?page=${page}&limit=${limit}`);
+  }
+
+  /* GET BY ID */
+  getById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.api}/${id}`);
   }
 
   /* ADD */
@@ -28,8 +33,8 @@ export class CustomerService {
   }
 
   /* SEARCH */
-  search(filter: any): Observable<any[]> {
-    return this.http.post<any[]>(`${this.api}/search`, filter);
+  search(filter: any, page: number = 1, limit: number = 10): Observable<any> {
+    return this.http.post<any>(`${this.api}/search?page=${page}&limit=${limit}`, filter);
   }
 
   /* UPDATE */

@@ -19,12 +19,19 @@ export class CustomerListComponent implements OnInit {
   customers: any[] = [];
   loading: boolean = false;
 
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 12;
+  totalItems: number = 0;
+  totalPages: number = 0;
+
   filter = {
     company_name: '',
     state: '',
     city: '',
     pincode: '',
-    customer_type: ''
+    customer_type: '',
+    tags: ''
   };
 
   constructor(
@@ -38,7 +45,10 @@ export class CustomerListComponent implements OnInit {
   ========================= */
   ngOnInit(): void {
     this.loadCustomers();
-    this.searchSubject.pipe(debounceTime(300)).subscribe(() => this.search());
+    this.searchSubject.pipe(debounceTime(300)).subscribe(() => {
+      this.currentPage = 1; // Reset to page 1 on filter change
+      this.search();
+    });
   }
 
   /* =========================
@@ -48,9 +58,11 @@ export class CustomerListComponent implements OnInit {
 
     this.loading = true;
 
-    this.customerService.getAll().subscribe({
-      next: (data: any[]) => {
-        this.customers = data || [];
+    this.customerService.getAll(this.currentPage, this.pageSize).subscribe({
+      next: (res: any) => {
+        this.customers = res.data || [];
+        this.totalItems = res.total || 0;
+        this.totalPages = Math.ceil(this.totalItems / this.pageSize);
         this.loading = false;
         this.cd.detectChanges();
       },
@@ -85,7 +97,8 @@ search(): void {
     this.filter.state ||
     this.filter.city ||
     this.filter.pincode ||
-    this.filter.customer_type;
+    this.filter.customer_type ||
+    this.filter.tags;
 
   // 🔥 If no filter → load all
   if (!hasFilter) {
@@ -95,9 +108,11 @@ search(): void {
 
   this.loading = true;
 
-  this.customerService.search(this.filter).subscribe({
-    next: (data: any[]) => {
-      this.customers = data || [];
+  this.customerService.search(this.filter, this.currentPage, this.pageSize).subscribe({
+    next: (res: any) => {
+      this.customers = res.data || [];
+      this.totalItems = res.total || 0;
+      this.totalPages = Math.ceil(this.totalItems / this.pageSize);
       this.loading = false;
       this.cd.detectChanges();
     },
@@ -108,6 +123,45 @@ search(): void {
   });
 
 }
+
+  /* =========================
+     PAGINATION CONTROLS
+  ========================= */
+  getPages(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - 2);
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    this.search(); // This will handle both filtered and unfiltered cases via search() logic
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.search();
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.search();
+    }
+  }
   /* =========================
      AUTO SEARCH (LIVE)
   ========================= */
@@ -125,10 +179,12 @@ search(): void {
       state: '',
       city: '',
       pincode: '',
-      customer_type: ''
+      customer_type: '',
+      tags: ''
     };
 
-    this.loadCustomers(); // 🔥 FIXED
+    this.currentPage = 1; // 🔥 Reset to first page
+    this.loadCustomers(); 
   }
 
   /* =========================

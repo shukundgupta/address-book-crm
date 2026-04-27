@@ -23,28 +23,48 @@
         <!-- CONTACT PERSON -->
         <mat-form-field appearance="outline">
           <mat-label>Contact Person</mat-label>
-          <input matInput formControlName="contact_person">
+          <input matInput formControlName="contact_person" required>
+          <mat-error *ngIf="customerForm.get('contact_person')?.hasError('required')">
+            Contact person is required
+          </mat-error>
         </mat-form-field>
 
         <!-- COMPANY NAME -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Company Name</mat-label>
-          <input matInput formControlName="company_name">
+          <input matInput formControlName="company_name" required>
+          <mat-error *ngIf="customerForm.get('company_name')?.hasError('required')">
+            Company name is required
+          </mat-error>
         </mat-form-field>
 
         <!-- CUSTOMER TYPE -->
         <mat-form-field appearance="outline">
           <mat-label>Customer Type</mat-label>
-          <mat-select formControlName="customer_type">
+          <mat-select formControlName="customer_type" required>
             <mat-option value="New">New</mat-option>
             <mat-option value="Existing">Existing</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- TAGS -->
+        <mat-form-field appearance="outline">
+          <mat-label>Tags</mat-label>
+          <mat-select formControlName="tags">
+            <mat-option value="">None</mat-option>
+            <mat-option value="Plant">Plant</mat-option>
+            <mat-option value="Chemicals">Chemicals</mat-option>
+            <mat-option value="Consumables">Consumables</mat-option>
           </mat-select>
         </mat-form-field>
 
         <!-- MOBILE -->
         <mat-form-field appearance="outline">
           <mat-label>Contact Number</mat-label>
-          <input matInput formControlName="contact_number" maxlength="10" inputmode="numeric" pattern="[0-9]*" (keypress)="allowNumbersOnly($event)">
+          <input matInput formControlName="contact_number" maxlength="10" inputmode="numeric" pattern="[0-9]*" (keypress)="allowNumbersOnly($event)" required>
+          <mat-error *ngIf="customerForm.get('contact_number')?.hasError('required')">
+            Contact number is required
+          </mat-error>
           <mat-error *ngIf="customerForm.get('contact_number')?.hasError('pattern')">
             Must be exactly 10 digits
           </mat-error>
@@ -112,7 +132,7 @@
       <!-- ACTION BUTTONS -->
       <div class="actions">
 
-        <button mat-raised-button color="primary" type="submit">
+        <button mat-raised-button color="primary" type="submit" [disabled]="customerForm.invalid || loading">
           {{ isEdit ? 'Update Customer' : 'Save Customer' }}
         </button>
 

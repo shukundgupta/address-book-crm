@@ -86,25 +86,96 @@ router.get('/export', async (req, res) => {
 
 
 /* ==============================
-   GET ALL CUSTOMERS
+   GET ALL CUSTOMERS (WITH PAGINATION)
 ================================ */
 router.get('/', (req, res) => {
 
   const company_id = req.user.company_id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
 
+  const countSql = `SELECT COUNT(*) as total FROM customers WHERE company_id = ?`;
   const sql = `
     SELECT * FROM customers
     WHERE company_id = ?
     ORDER BY id DESC
+    LIMIT ? OFFSET ?
   `;
 
-  db.query(sql, [company_id], (err, result) => {
+  db.query(countSql, [company_id], (err, countResult) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ message: 'Error fetching customers' });
+      return res.status(500).json({ message: 'Error counting customers' });
+    }
+    const total = countResult[0].total;
+
+    db.query(sql, [company_id, limit, offset], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error fetching customers' });
+      }
+
+      res.json({
+        data: result,
+        total,
+        page,
+        limit
+      });
+    });
+  });
+
+});
+
+
+/* ==============================
+   CHECK DUPLICATE COMPANY NAME
+================================ */
+router.get('/check-duplicate', (req, res) => {
+
+  const company_id = req.user.company_id;
+  const name = (req.query.name || '').trim();
+
+  const sql = `
+    SELECT COUNT(*) as count
+    FROM customers
+    WHERE company_id = ? AND company_name = ?
+  `;
+
+  db.query(sql, [company_id, name], (err, result) => {
+
+    if (err) return res.status(500).json(err);
+
+    res.json({
+      exists: result[0].count > 0
+    });
+
+  });
+
+});
+
+
+/* ==============================
+   GET CUSTOMER BY ID
+================================ */
+router.get('/:id', (req, res) => {
+
+  const id = req.params.id;
+  const company_id = req.user.company_id;
+
+  const sql = `SELECT * FROM customers WHERE id = ? AND company_id = ?`;
+
+  db.query(sql, [id, company_id], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: 'Error fetching customer' });
     }
 
-    res.json(result);
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    res.json(result[0]);
   });
 
 });
@@ -155,8 +226,13 @@ router.post('/', (req, res) => {
     email,
     contact_person,
     contact_number,
-    title
+    title,
+    tags
   } = req.body;
+
+  if (!company_name || !contact_person || !contact_number) {
+    return res.status(400).json({ message: 'Company Name, Contact Person, and Contact Number are required' });
+  }
 
   if (contact_number && !/^\d{10}$/.test(contact_number)) {
     return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
@@ -168,8 +244,8 @@ router.post('/', (req, res) => {
 
   const query = `
     INSERT INTO customers
-    (company_id, title, company_name, customer_type, address, state, city, pincode, email, contact_person, contact_number)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (company_id, title, company_name, customer_type, address, state, city, pincode, email, contact_person, contact_number, tags)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(query, [
@@ -183,7 +259,8 @@ router.post('/', (req, res) => {
     pincode,
     email,
     contact_person,
-    contact_number
+    contact_number,
+    tags
   ], (err, result) => {
 
     if (err) {
@@ -201,91 +278,88 @@ router.post('/', (req, res) => {
 });
 
 
-/* ==============================
-   CHECK DUPLICATE COMPANY NAME
-================================ */
-router.get('/check-duplicate', (req, res) => {
-
-  const company_id = req.user.company_id;
-  const name = (req.query.name || '').trim();
-
-  const sql = `
-    SELECT COUNT(*) as count
-    FROM customers
-    WHERE company_id = ? AND company_name = ?
-  `;
-
-  db.query(sql, [company_id, name], (err, result) => {
-
-    if (err) return res.status(500).json(err);
-
-    res.json({
-      exists: result[0].count > 0
-    });
-
-  });
-
-});
 
 
 /* ==============================
-   SEARCH CUSTOMER
-================================ */
+   SEARCH CUSTOMER (WITH PAGINATION)
+ ================================ */
 router.post('/search', (req, res) => {
 
   const company_id = req.user.company_id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
 
   const {
     state,
     city,
     pincode,
     customer_type,
-    company_name
+    company_name,
+    tags
   } = req.body;
 
-  let sql = `
-    SELECT * FROM customers
-    WHERE company_id = ?
-  `;
-
+  let baseSql = `WHERE company_id = ?`;
   let params = [company_id];
 
   if (state) {
-    sql += " AND state LIKE ?";
+    baseSql += " AND state LIKE ?";
     params.push(`%${state}%`);
   }
 
   if (city) {
-    sql += " AND city LIKE ?";
+    baseSql += " AND city LIKE ?";
     params.push(`%${city}%`);
   }
 
   if (pincode) {
-    sql += " AND pincode LIKE ?";
+    baseSql += " AND pincode LIKE ?";
     params.push(`%${pincode}%`);
   }
 
   if (customer_type) {
-    sql += " AND customer_type = ?";
+    baseSql += " AND customer_type = ?";
     params.push(customer_type);
   }
 
   if (company_name) {
-    sql += " AND company_name LIKE ?";
+    baseSql += " AND company_name LIKE ?";
     params.push(`%${company_name}%`);
   }
 
-  sql += " ORDER BY id DESC";
+  if (tags) {
+    baseSql += " AND tags LIKE ?";
+    params.push(`%${tags}%`);
+  }
 
-  db.query(sql, params, (err, result) => {
+  const countSql = `SELECT COUNT(*) as total FROM customers ${baseSql}`;
+  const sql = `
+    SELECT * FROM customers
+    ${baseSql}
+    ORDER BY id DESC
+    LIMIT ? OFFSET ?
+  `;
 
+  db.query(countSql, params, (err, countResult) => {
     if (err) {
       console.error(err);
       return res.status(500).json(err);
     }
+    const total = countResult[0].total;
 
-    res.json(result);
+    db.query(sql, [...params, limit, offset], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json(err);
+      }
 
+      res.json({
+        data: result,
+        total,
+        page,
+        limit
+      });
+    });
   });
 
 });
@@ -309,8 +383,13 @@ router.put('/:id', (req, res) => {
     email,
     contact_person,
     contact_number,
-    title
+    title,
+    tags
   } = req.body;
+
+  if (!company_name || !contact_person || !contact_number) {
+    return res.status(400).json({ message: 'Company Name, Contact Person, and Contact Number are required' });
+  }
 
   if (contact_number && !/^\d{10}$/.test(contact_number)) {
     return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
@@ -332,7 +411,8 @@ router.put('/:id', (req, res) => {
       pincode=?,
       email=?,
       contact_person=?,
-      contact_number=?
+      contact_number=?,
+      tags=?
     WHERE id=? AND company_id=?
   `;
 
@@ -347,6 +427,7 @@ router.put('/:id', (req, res) => {
     email,
     contact_person,
     contact_number,
+    tags,
     id,
     company_id
   ], (err, result) => {
