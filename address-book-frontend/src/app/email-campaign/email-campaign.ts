@@ -41,7 +41,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     social_fb: '',
     social_ig: '',
     social_li: '',
-    social_tw: ''
+    social_tw: '',
+    filter_tag: 'All'
   };
   
   selectedFiles: any[] = [];
@@ -663,7 +664,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     this.emailService.previewCampaign({
       customer_type: this.campaign.customer_type,
       filter_type: this.campaign.filter_type,
-      filter_value: this.campaign.filter_value
+      filter_value: this.campaign.filter_value,
+      filter_tag: this.campaign.filter_tag
     }).subscribe({
       next: (data) => {
         console.log('✅ Preview Data Received:', data);
@@ -796,7 +798,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
           social_fb: fullCampaign.social_fb || '',
           social_ig: fullCampaign.social_ig || '',
           social_li: fullCampaign.social_li || '',
-          social_tw: fullCampaign.social_tw || ''
+          social_tw: fullCampaign.social_tw || '',
+          filter_tag: fullCampaign.filter_tag || 'All'
         };
 
         this.existingAttachments = JSON.parse(fullCampaign.attachments || '[]');
@@ -848,7 +851,8 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
       social_fb: '',
       social_ig: '',
       social_li: '',
-      social_tw: ''
+      social_tw: '',
+      filter_tag: 'All'
     };
 
     this.selectedFiles = [];

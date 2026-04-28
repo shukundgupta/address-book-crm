@@ -132,7 +132,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 router.post('/preview', (req, res) => {
   console.log('🔍 Preview Request Body:', JSON.stringify(req.body, null, 2));
   const company_id = req.user.company_id;
-  const { filter_type, filter_value, customer_type } = req.body;
+  const { filter_type, filter_value, customer_type, filter_tag } = req.body;
 
   let sql = `SELECT id, email, company_name, city, state, pincode FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
   let params = [company_id];
@@ -140,6 +140,15 @@ router.post('/preview', (req, res) => {
   if (customer_type && customer_type !== 'All') {
     sql += ` AND customer_type = ?`;
     params.push(customer_type);
+  }
+
+  if (filter_tag && filter_tag !== 'All') {
+    if (filter_tag === 'None') {
+      sql += ` AND (tags IS NULL OR tags = '')`;
+    } else {
+      sql += ` AND tags = ?`;
+      params.push(filter_tag);
+    }
   }
 
   if (filter_type === 'state' && filter_value) {
@@ -258,6 +267,7 @@ router.post('/save', upload.array('attachments'), (req, res) => {
   const c_body    = html_body || '';
   const c_f_type  = filter_type || 'all';
   const c_f_val   = filter_value || null;
+  const c_f_tag   = filter_tag || 'All';
   const c_c_type  = customer_type || 'Existing';
   const c_header  = template_header || '';
   const c_footer  = template_footer || '';
@@ -274,12 +284,12 @@ router.post('/save', upload.array('attachments'), (req, res) => {
     const sql = `
       UPDATE email_campaigns SET
         campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
-        customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
+        customer_type = ?, filter_tag = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
         template_header = ?, template_footer = ?, template_color = ?,
         attachments = ?, status = 'draft'
       WHERE id = ? AND company_id = ? AND user_id = ?
     `;
-    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, attachmentData, id, company_id, req.user.id];
+    const params = [c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_f_tag, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, attachmentData, id, company_id, req.user.id];
     console.log('📝 Executing UPDATE Query...');
     
     db.query(sql, params, (err, result) => {
@@ -296,10 +306,10 @@ router.post('/save', upload.array('attachments'), (req, res) => {
   } else {
     const sql = `
       INSERT INTO email_campaigns
-        (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, attachments, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+        (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, filter_tag, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, attachments, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
     `;
-    const params = [company_id, req.user.id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, attachmentData];
+    const params = [company_id, req.user.id, c_name, c_subject, c_body, c_f_type, c_f_val, c_c_type, c_f_tag, c_from, c_fb, c_ig, c_li, c_tw, c_header, c_footer, c_color, attachmentData];
     console.log('📝 Executing INSERT Query...');
 
     db.query(sql, params, (err, result) => {
@@ -336,7 +346,8 @@ router.post('/send', upload.array('attachments'), async (req, res) => {
     social_fb,
     social_ig,
     social_li,
-    social_tw
+    social_tw,
+    filter_tag
   } = req.body;
 
   // Process attachments (Merge existing ones with new uploads)
@@ -372,6 +383,15 @@ router.post('/send', upload.array('attachments'), async (req, res) => {
     paramsRecip.push(customer_type);
   }
 
+  if (filter_tag && filter_tag !== 'All') {
+    if (filter_tag === 'None') {
+      sqlRecip += ` AND (tags IS NULL OR tags = '')`;
+    } else {
+      sqlRecip += ` AND tags = ?`;
+      paramsRecip.push(filter_tag);
+    }
+  }
+
   if (filter_type === 'state' && filter_value) {
     sqlRecip += ` AND state = ?`;
     paramsRecip.push(filter_value);
@@ -401,14 +421,14 @@ router.post('/send', upload.array('attachments'), async (req, res) => {
       const updateSql = `
         UPDATE email_campaigns SET
           campaign_name = ?, subject = ?, html_body = ?, filter_type = ?, filter_value = ?,
-          customer_type = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
+          customer_type = ?, filter_tag = ?, from_name = ?, social_fb = ?, social_ig = ?, social_li = ?, social_tw = ?,
           template_header = ?, template_footer = ?, template_color = ?,
           total_recipients = ?, total_batches = ?, attachments = ?, status = 'sending', created_at = NOW()
         WHERE id = ? AND company_id = ? AND user_id = ?
       `;
       db.query(updateSql, [
         campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
-        customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
+        customer_type || 'Existing', filter_tag || 'All', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
         template_header, template_footer, template_color,
         totalRecipients, totalRecipients, attachmentData, id, company_id, req.user.id
       ], (err) => {
@@ -419,12 +439,12 @@ router.post('/send', upload.array('attachments'), async (req, res) => {
       // CREATE NEW CAMPAIGN RECORD
       const campaignSql = `
         INSERT INTO email_campaigns
-          (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, total_recipients, total_batches, attachments, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
+          (company_id, user_id, campaign_name, subject, html_body, filter_type, filter_value, customer_type, filter_tag, from_name, social_fb, social_ig, social_li, social_tw, template_header, template_footer, template_color, total_recipients, total_batches, attachments, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', NOW())
       `;
       db.query(campaignSql, [
         company_id, req.user.id, campaign_name, subject, fullHtml, filter_type || 'all', filter_value || null,
-        customer_type || 'Existing', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
+        customer_type || 'Existing', filter_tag || 'All', from_name, social_fb || '', social_ig || '', social_li || '', social_tw || '',
         template_header, template_footer, template_color,
         totalRecipients, totalRecipients, attachmentData
       ], (err, result) => {
@@ -497,7 +517,7 @@ router.get('/history', (req, res) => {
   const company_id = req.user.company_id;
 
   const sql = `
-    SELECT id, campaign_name, subject, filter_type, filter_value, customer_type, 
+    SELECT id, campaign_name, subject, filter_type, filter_value, customer_type, filter_tag, 
            total_recipients, sent_count, failed_count, status, created_at, from_name
     FROM email_campaigns
     WHERE company_id = ? AND user_id = ?

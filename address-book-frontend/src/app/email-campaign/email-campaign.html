@@ -408,13 +408,24 @@
           </div>
 
           <div class="form-group">
-            <label>Filter By</label>
+            <label>Filter By Location</label>
             <select [(ngModel)]="campaign.filter_type" (change)="onFilterTypeChange()" class="ec-input">
               <option value="all">{{ campaign.customer_type === 'All' ? 'All Customers' : 'All ' +
                 campaign.customer_type + ' Customers' }}</option>
               <option value="state">By State</option>
               <option value="city">By City</option>
               <option value="pincode">By Pincode</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Filter By Tag</label>
+            <select [(ngModel)]="campaign.filter_tag" (change)="preview = null" class="ec-input">
+              <option value="All">All Tags</option>
+              <option value="Plant">Plant</option>
+              <option value="Chemicals">Chemicals</option>
+              <option value="Consumables">Consumables</option>
+              <option value="None">None</option>
             </select>
           </div>
 
@@ -576,6 +587,9 @@
               <span class="filter-badge">
                 {{ c.filter_type === 'all' ? 'All' : c.filter_type + ': ' + c.filter_value }}
               </span>
+              <span *ngIf="c.filter_tag && c.filter_tag !== 'All'" class="filter-badge" style="background:#e8f5e9; color:#2e7d32; border-color:#c8e6c9; margin-top:4px; display:block;">
+                Tag: {{ c.filter_tag }}
+              </span>
             </td>
             <td><b>{{ c.total_recipients }}</b></td>
             <td class="sent-cell">{{ c.sent_count }}</td>
@@ -635,6 +649,7 @@
         {{ selectedCampaign.filter_type === 'all' ? 'All Customers' : selectedCampaign.filter_type + ': ' +
         selectedCampaign.filter_value }}
       </div>
+      <div class="meta-item"><b>Tag Filter:</b> {{ selectedCampaign.filter_tag || 'All' }}</div>
       <div *ngIf="selectedCampaign.attachments" class="meta-item full-width">
         <b>Attachments:</b>
         <div class="meta-attachment-list">
@@ -734,6 +749,7 @@
               <th>Email</th>
               <th>City</th>
               <th>State</th>
+              <th>Tags</th>
               <th>Type</th>
             </tr>
           </thead>
@@ -743,6 +759,7 @@
               <td>{{ r.email }}</td>
               <td>{{ r.city }}</td>
               <td>{{ r.state }}</td>
+              <td>{{ r.tags || '-' }}</td>
               <td><span class="type-badge">{{ r.customer_type || campaign.customer_type }}</span></td>
             </tr>
             <tr *ngIf="!filteredRecipients.length">
