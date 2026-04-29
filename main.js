@@ -11,21 +11,27 @@ function createWindow() {
     width: 1280,
     height: 800,
     title: "Address Book CRM",
-    icon: path.join(__dirname, 'address-book-frontend/src/favicon.ico'),
+    icon: path.join(__dirname, 'address-book-frontend/public/icon.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
     }
   });
 
-  // Remove default menu
   mainWindow.setMenuBarVisibility(false);
 
-  // Wait for backend to be ready
+  let attempts = 0;
+  const maxAttempts = 30; // 30 seconds timeout
+
   const checkBackend = () => {
     http.get('http://localhost:3000', (res) => {
       mainWindow.loadURL('http://localhost:3000');
     }).on('error', () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        dialog.showErrorBox("Startup Error", "The backend server failed to start within 30 seconds. Please check if WAMP is running and port 3000 is free.");
+        return;
+      }
       setTimeout(checkBackend, 1000);
     });
   };
@@ -38,14 +44,35 @@ function createWindow() {
 }
 
 function startBackend() {
+  const fs = require('fs');
   const serverPath = path.join(__dirname, 'address-book-backend/server.js');
+  
+  if (!fs.existsSync(serverPath)) {
+    dialog.showErrorBox("File Missing", "Critical app file missing: " + serverPath);
+    return;
+  }
+
+  let lastError = "";
+
   backendProcess = fork(serverPath, [], {
     cwd: path.join(__dirname, 'address-book-backend'),
-    env: { ...process.env, PORT: 3000 }
+    env: { ...process.env, PORT: 3000 },
+    stdio: ['inherit', 'pipe', 'pipe', 'ipc']
+  });
+
+  backendProcess.stderr.on('data', (data) => {
+    lastError += data.toString();
+    console.error(`Backend Error: ${data}`);
   });
 
   backendProcess.on('error', (err) => {
-    console.error('Failed to start backend:', err);
+    dialog.showErrorBox("Backend Error", "Failed to start background process: " + err.message);
+  });
+  
+  backendProcess.on('exit', (code) => {
+    if (code !== 0 && code !== null) {
+      dialog.showErrorBox("Backend Crash", "The background server crashed.\n\nReason:\n" + (lastError || "Unknown error (check if port 3000 is busy)"));
+    }
   });
 }
 

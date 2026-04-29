@@ -2,12 +2,24 @@
   "name": "address-book-crm-desktop",
   "version": "1.0.0",
   "description": "Professional Address Book CRM Desktop Application",
+  "author": "Shukund Gupta",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build:frontend": "cd address-book-frontend && npm run build",
     "package": "electron-builder",
     "package-simple": "electron-packager . AddressBookCRM --platform=win32 --arch=x64 --out=release --overwrite --icon=address-book-frontend/src/favicon.ico --ignore=\"address-book-frontend/(node_modules|src|angular.json|tsconfig.json)\""
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "mysql2": "^3.18.1",
+    "nodemailer": "^8.0.5"
   },
   "devDependencies": {
     "electron": "^30.0.0",
@@ -24,20 +36,24 @@
       "target": [
         "nsis"
       ],
-      "icon": "address-book-frontend/src/favicon.ico"
+      "icon": "address-book-frontend/public/icon.png"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AddressBook CRM"
+      "shortcutName": "AddressBook CRM",
+      "publisherName": "Shukund Gupta"
     },
+    "asar": false,
     "files": [
       "main.js",
       "package.json",
       "address-book-backend/**/*",
+      "address-book-backend/.env",
       "address-book-frontend/dist/**/*",
+      "!address-book-backend/node_modules",
       "!address-book-frontend/node_modules",
       "!address-book-frontend/src",
       "!address-book-frontend/angular.json",
