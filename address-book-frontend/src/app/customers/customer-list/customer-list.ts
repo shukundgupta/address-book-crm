@@ -221,9 +221,32 @@ search(): void {
       return;
     }
 
-    // Opens backend export URL — browser downloads a proper .xlsx file
-    const exportUrl = 'http://localhost:3000/api/customers/export';
-    window.open(exportUrl, '_blank');
+    this.loading = true;
+
+    this.customerService.export().subscribe({
+      next: (blob) => {
+        // Create a temporary link and trigger download
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Customers_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Clean up
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        this.loading = false;
+        this.cd.detectChanges();
+      },
+      error: (err) => {
+        console.error('Export failed:', err);
+        this.loading = false;
+        alert('Failed to export customers. Please try again.');
+        this.cd.detectChanges();
+      }
+    });
 
   }
 

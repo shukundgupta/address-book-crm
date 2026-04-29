@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Apr 28, 2026 at 01:21 PM
+-- Generation Time: Apr 29, 2026 at 03:22 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -113,8 +113,8 @@ INSERT INTO `customers` (`id`, `company_id`, `company_name`, `address`, `state`,
 (4, 1, 'ABC & Co', '142 Pasalkar Bhavan, \nShivajinagar', 'Maharashtra', 'Pune', '411005', 'shukundgupta@gmail.com', 'Arjun Sharma', 'Mr', '5987654126', 'New', 1, '2026-04-17 17:23:50', '2026-04-22 16:07:58', NULL),
 (5, 1, 'Southern Crest Logistics', 'Flat 204, Sai Residency, \nT. Nagar', 'Tamil Nadu', 'Chennai', '600017', 'shukundgupta@gmail.com', 'Priya Iyer', 'Ms', '8957465214', 'Existing', 1, '2026-04-17 17:28:56', '2026-04-22 16:07:49', NULL),
 (6, 1, 'TechPinnacle Solutions Pvt Ltd', '42, Green Park Extension', 'Delhi', 'South West Delhi', '110016', 'shukundgupta@gmail.com', ' Aarav Sharma', 'Mr', '9987549857', 'New', 1, '2026-04-17 17:30:55', '2026-04-22 16:07:41', NULL),
-(7, 2, 'KBC Ltd', '71 C, MOHAMEDALI ROAD,', 'Maharashtra', 'Mumbai', '400003', 'shukundgupta@gmail.com', 'Sanjay Gupta', 'Mr', '9875545451', 'New', 1, '2026-04-18 03:54:50', '2026-04-25 17:55:20', NULL),
-(8, 2, 'ATTAR MOHD.DAWOOD & BROS', 'A-13/14, MEPZ-SEZ,\nTAMBARAM,,', 'Tamil Nadu', 'Kanchipuram', '600045', 'shukundgupta@gmail.com', 'Sanjay Gupta', 'Mr', '9854545214', 'New', 1, '2026-04-18 04:00:00', '2026-04-25 17:55:06', NULL),
+(7, 2, 'KBC Ltd', '71 C, MOHAMEDALI ROAD,', 'Maharashtra', 'Mumbai', '400003', 'shukundgupta@gmail.com', 'Sanjay Gupta', 'Mr', '9875545451', 'New', 1, '2026-04-18 03:54:50', '2026-04-28 19:13:02', 'Plant'),
+(8, 2, 'ATTAR MOHD.DAWOOD & BROS', 'A-13/14, MEPZ-SEZ,\nTAMBARAM,,', 'Tamil Nadu', 'Kanchipuram', '600045', 'shukundgupta@gmail.com', 'Sanjay Gupta', 'Mr', '9854545214', 'New', 1, '2026-04-18 04:00:00', '2026-04-28 19:14:49', 'Consumables'),
 (10, 2, 'Emerald Jewel Industry', '230, Thiruvenkatasamy Road,\nR.S. Puram, Coimbatore – 641002.', 'Tamil Nadu', 'Coimbatore', '641002', 'shukundgupta@gmail.com', 'Shukund Gupta', 'Mr', '7738819993', 'Existing', 1, '2026-04-27 03:50:43', '2026-04-27 03:50:43', 'Chemicals');
 
 -- --------------------------------------------------------
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS `otp_verification` (
   `verified` tinyint(1) DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `otp_verification`
@@ -236,7 +236,9 @@ INSERT INTO `otp_verification` (`id`, `email`, `otp`, `expires_at`, `verified`, 
 (44, 'sukundg@gmail.com', '976153', '2026-04-17 21:50:45', 0, '2026-04-17 16:15:45'),
 (45, 'sukundg@gmail.com', '652533', '2026-04-17 21:59:47', 0, '2026-04-17 16:24:47'),
 (46, 'shukundgupta@gmail.com', '130235', '2026-04-17 22:22:06', 0, '2026-04-17 16:47:05'),
-(47, 'admin@tiaano.com', '637277', '2026-04-21 09:12:31', 0, '2026-04-21 03:37:30');
+(47, 'admin@tiaano.com', '637277', '2026-04-21 09:12:31', 0, '2026-04-21 03:37:30'),
+(48, 'sldf', '423263', '2026-04-29 08:46:26', 0, '2026-04-29 03:11:25'),
+(49, 'sdf', '377891', '2026-04-29 08:49:26', 0, '2026-04-29 03:14:25');
 
 -- --------------------------------------------------------
 

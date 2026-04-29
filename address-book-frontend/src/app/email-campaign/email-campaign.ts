@@ -42,7 +42,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
     social_ig: '',
     social_li: '',
     social_tw: '',
-    filter_tag: 'All'
+    filter_tag: 'None'
   };
   
   selectedFiles: any[] = [];
@@ -799,7 +799,7 @@ export class EmailCampaignComponent implements OnInit, AfterViewInit {
           social_ig: fullCampaign.social_ig || '',
           social_li: fullCampaign.social_li || '',
           social_tw: fullCampaign.social_tw || '',
-          filter_tag: fullCampaign.filter_tag || 'All'
+          filter_tag: fullCampaign.filter_tag || 'None'
         };
 
         this.existingAttachments = JSON.parse(fullCampaign.attachments || '[]');

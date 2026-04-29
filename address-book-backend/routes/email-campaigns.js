@@ -134,7 +134,7 @@ router.post('/preview', (req, res) => {
   const company_id = req.user.company_id;
   const { filter_type, filter_value, customer_type, filter_tag } = req.body;
 
-  let sql = `SELECT id, email, company_name, city, state, pincode FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
+  let sql = `SELECT id, email, company_name, city, state, pincode, tags, customer_type FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
   let params = [company_id];
 
   if (customer_type && customer_type !== 'All') {
@@ -142,13 +142,9 @@ router.post('/preview', (req, res) => {
     params.push(customer_type);
   }
 
-  if (filter_tag && filter_tag !== 'All') {
-    if (filter_tag === 'None') {
-      sql += ` AND (tags IS NULL OR tags = '')`;
-    } else {
-      sql += ` AND tags = ?`;
-      params.push(filter_tag);
-    }
+  if (filter_tag && filter_tag !== 'All' && filter_tag !== 'None') {
+    sql += ` AND tags = ?`;
+    params.push(filter_tag);
   }
 
   if (filter_type === 'state' && filter_value) {
@@ -375,7 +371,7 @@ router.post('/send', upload.array('attachments'), async (req, res) => {
   }
 
   // Fetch recipients
-  let sqlRecip = `SELECT id, email, company_name, contact_person, city, state, pincode FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
+  let sqlRecip = `SELECT id, email, company_name, contact_person, city, state, pincode, tags, customer_type FROM customers WHERE company_id = ? AND email IS NOT NULL AND email != ''`;
   let paramsRecip = [company_id];
 
   if (customer_type && customer_type !== 'All') {
@@ -383,13 +379,9 @@ router.post('/send', upload.array('attachments'), async (req, res) => {
     paramsRecip.push(customer_type);
   }
 
-  if (filter_tag && filter_tag !== 'All') {
-    if (filter_tag === 'None') {
-      sqlRecip += ` AND (tags IS NULL OR tags = '')`;
-    } else {
-      sqlRecip += ` AND tags = ?`;
-      paramsRecip.push(filter_tag);
-    }
+  if (filter_tag && filter_tag !== 'All' && filter_tag !== 'None') {
+    sqlRecip += ` AND tags = ?`;
+    paramsRecip.push(filter_tag);
   }
 
   if (filter_type === 'state' && filter_value) {

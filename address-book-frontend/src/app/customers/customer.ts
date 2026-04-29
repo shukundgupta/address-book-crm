@@ -52,4 +52,9 @@ export class CustomerService {
     return this.http.get<any>(`${this.api}/stats/summary`);
   }
 
+  /* EXPORT */
+  export(): Observable<Blob> {
+    return this.http.get(`${this.api}/export`, { responseType: 'blob' });
+  }
+
 }

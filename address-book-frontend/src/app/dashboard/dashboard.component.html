@@ -1,30 +1,72 @@
 <div class="dashboard">
-
-  <h1>CRM Dashboard</h1>
-
-  <div style="margin-bottom:20px;">
+  <div class="dashboard-header">
+    <h1>CRM Dashboard</h1>
     <button (click)="goToAddCustomer()" class="add-btn">
-      + Add Customer
+      <span class="icon">+</span> Add Customer
     </button>
   </div>
 
-  <div class="cards">
+  <div class="dashboard-content">
+    <!-- STATS CARDS -->
+    <div class="cards">
+      <div class="card total">
+        <div class="card-icon">👥</div>
+        <div class="card-info">
+          <h3>Total Customers</h3>
+          <p>{{stats.total}}</p>
+        </div>
+      </div>
 
-    <div class="card total">
-      <h3>Total Customers</h3>
-      <p>{{stats.total}}</p>
+      <div class="card new">
+        <div class="card-icon">✨</div>
+        <div class="card-info">
+          <h3>New Customers</h3>
+          <p>{{stats.new}}</p>
+        </div>
+      </div>
+
+      <div class="card existing">
+        <div class="card-icon">🤝</div>
+        <div class="card-info">
+          <h3>Existing Customers</h3>
+          <p>{{stats.existing}}</p>
+        </div>
+      </div>
     </div>
 
-    <div class="card new">
-      <h3>New Customers</h3>
-      <p>{{stats.new}}</p>
+    <!-- PREMIUM CHART SECTION -->
+    <div class="chart-section">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>📊 Customer Distribution</h3>
+          <p class="chart-subtitle">Overview of customer segments</p>
+        </div>
+        <div class="chart-container">
+          <canvas #chartCanvas></canvas>
+        </div>
+      </div>
+      
+      <!-- QUICK SUMMARY -->
+      <div class="summary-card">
+        <h3>💡 Quick Insights</h3>
+        <div class="insight-item">
+          <span class="dot new-dot"></span>
+          <div class="insight-text">
+            <strong>{{stats.new}}</strong> new customers this period.
+          </div>
+        </div>
+        <div class="insight-item">
+          <span class="dot existing-dot"></span>
+          <div class="insight-text">
+            <strong>{{stats.existing}}</strong> active existing relationships.
+          </div>
+        </div>
+        <div class="insight-item highlight">
+          <div class="insight-text">
+            Your customer base is <strong>{{stats.total}}</strong> strong!
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div class="card existing">
-      <h3>Existing Customers</h3>
-      <p>{{stats.existing}}</p>
-    </div>
-
   </div>
-
 </div>

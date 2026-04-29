@@ -1,0 +1,51 @@
+{
+  "name": "address-book-crm-desktop",
+  "version": "1.0.0",
+  "description": "Professional Address Book CRM Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:frontend": "cd address-book-frontend && npm run build",
+    "package": "electron-builder",
+    "package-simple": "electron-packager . AddressBookCRM --platform=win32 --arch=x64 --out=release --overwrite --icon=address-book-frontend/src/favicon.ico --ignore=\"address-book-frontend/(node_modules|src|angular.json|tsconfig.json)\""
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.addressbook.crm",
+    "productName": "AddressBookCRM",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "address-book-frontend/src/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AddressBook CRM"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "address-book-backend/**/*",
+      "address-book-frontend/dist/**/*",
+      "!address-book-frontend/node_modules",
+      "!address-book-frontend/src",
+      "!address-book-frontend/angular.json",
+      "!address-book-frontend/tsconfig.json",
+      "!**/*.zip",
+      "!**/*.sql",
+      "!.git"
+    ],
+    "publish": null
+  }
+}

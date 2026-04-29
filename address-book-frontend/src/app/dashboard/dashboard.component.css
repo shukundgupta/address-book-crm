@@ -1,59 +1,203 @@
-.dashboard{
-  padding:30px;
+.dashboard {
+  padding: 40px;
+  background: #f8faff;
+  min-height: 100vh;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
-.dashboard h1{
-  margin-bottom:25px;
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
 }
 
-.cards{
-  display:flex;
-  gap:20px;
-  flex-wrap:wrap;
+.dashboard-header h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
-.card{
-  padding:25px;
-  border-radius:10px;
-  width:220px;
-  text-align:center;
-  color:white;
-  box-shadow:0 3px 8px rgba(0,0,0,0.2);
+.add-btn {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.card h3{
-  margin-bottom:10px;
+.add-btn:hover {
+  background: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
 }
 
-.card p{
-  font-size:30px;
-  font-weight:bold;
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* STATS CARDS */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.card {
+  padding: 30px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: white;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 150px;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transition: all 0.5s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+}
+
+.card:hover::before {
+  transform: scale(1.5);
+}
+
+.card-icon {
+  font-size: 2.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  width: 65px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  backdrop-filter: blur(5px);
+}
+
+.card-info h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-info p {
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin: 5px 0 0 0;
 }
 
 /* colors */
+.total { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+.new { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.existing { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
 
-.total{
-  background:#3f51b5;
+/* CHART SECTION */
+.chart-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: stretch;
 }
 
-.new{
-  background:#4caf50;
+.chart-card, .summary-card {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f1f5f9;
 }
 
-.existing{
-  background:#ff9800;
+.chart-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1e293b;
 }
 
-.add-btn{
-  background:#2196f3;
-  color:white;
-  border:none;
-  padding:10px 18px;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:bold;
+.chart-subtitle {
+  margin: 5px 0 25px 0;
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
-.add-btn:hover{
-  background:#1976d2;
+.chart-container {
+  height: 300px;
+  position: relative;
+}
+
+.summary-card h3 {
+  font-size: 1.25rem;
+  color: #1e293b;
+  margin-bottom: 25px;
+}
+
+.insight-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 16px;
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+}
+
+.insight-item:hover {
+  background: #f1f5f9;
+}
+
+.insight-item.highlight {
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+  margin-top: 25px;
+  color: #4338ca;
+}
+
+.insight-text {
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.new-dot { background: #10b981; }
+.existing-dot { background: #f59e0b; }
+
+@media (max-width: 1024px) {
+  .chart-section {
+    grid-template-columns: 1fr;
+  }
 }

@@ -47,10 +47,15 @@ export class Signup {
     return;
   }
 
-  if (!this.email) {
-    this.snack.open('Enter email first', 'OK', { duration: 2000 });
-    return;
-  }
+    if (!this.email) {
+      this.snack.open('Enter email first', 'OK', { duration: 2000 });
+      return;
+    }
+
+    if (!this.isValidEmail(this.email)) {
+      this.snack.open('Please enter a valid email address', 'OK', { duration: 2000 });
+      return;
+    }
 
   this.loading = true;
   this.http.post('http://localhost:3000/api/auth/send-otp', {
@@ -217,6 +222,12 @@ export class Signup {
       }
 
     });
+  }
+
+  /* ================= HELPERS ================= */
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 
 }

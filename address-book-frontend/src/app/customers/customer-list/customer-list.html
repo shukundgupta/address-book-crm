@@ -16,8 +16,9 @@
 
     <!-- RIGHT -->
     <div class="right-actions">
-      <button class="btn btn-export" (click)="exportToExcel()">
-        ⬇ Export
+      <button class="btn btn-export" (click)="exportToExcel()" [disabled]="loading">
+        <span *ngIf="!loading">⬇ Export</span>
+        <span *ngIf="loading">⌛ Exporting...</span>
       </button>
     </div>
 
