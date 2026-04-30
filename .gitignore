@@ -5,3 +5,4 @@ release/
 address-book-backend/uploads/
 *.log
 .DS_Store
+*.zip
