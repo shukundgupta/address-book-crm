@@ -1,8 +1,22 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
 const http = require('http');
 const fs = require('fs');
+const os = require('os');
+
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
 
 let mainWindow;
 let backendProcess;
@@ -22,7 +36,56 @@ function createWindow() {
     }
   });
 
-  mainWindow.setMenuBarVisibility(false);
+  mainWindow.setMenuBarVisibility(true);
+  
+  const menuTemplate = [
+    {
+      label: 'File',
+      submenu: [
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Settings',
+      submenu: [
+        {
+          label: 'Reset Application (Switch Server/Client)',
+          click: () => {
+            const choice = dialog.showMessageBoxSync(mainWindow, {
+              type: 'warning',
+              buttons: ['Cancel', 'Yes, Reset'],
+              title: 'Confirm Reset',
+              message: 'This will reset your Server/Client settings and relaunch the app. You will need to setup the role again. Continue?'
+            });
+            if (choice === 1) {
+              if (fs.existsSync(configPath)) {
+                fs.unlinkSync(configPath);
+                app.relaunch();
+                app.exit();
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
 
   /* =========================
      ZOOM FEATURES
@@ -145,6 +208,12 @@ ipcMain.on('save-config', (event, config) => {
     dialog.showErrorBox("Settings Error", "Failed to save settings: " + err.message);
   }
 });
+
+// Provide Local IP to setup.html
+ipcMain.handle('get-local-ip', () => {
+  return getLocalIp();
+});
+
 
 app.on('ready', createWindow);
 
