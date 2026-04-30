@@ -1,6 +1,7 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
 /* STEP 1: CREATE APP FIRST */
 const app = express();
@@ -27,13 +28,28 @@ const frontendPath = path.join(__dirname, '../address-book-frontend/dist/address
 app.use(express.static(frontendPath));
 
 // Handle Angular SPA routing
-app.get('*', (req, res) => {
+app.use((req, res, next) => {
   if (!req.url.startsWith('/api')) {
     res.sendFile(path.join(frontendPath, 'index.html'));
+  } else {
+    next();
   }
 });
 
 /* STEP 5: START SERVER */
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+const PORT = process.env.PORT || 3000;
+const db = require('./config/db');
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  
+  // Verify DB connection on startup
+  db.getConnection((err, connection) => {
+    if (err) {
+      console.error('CRITICAL: Database connection failed during startup!');
+    } else {
+      console.log('Database verified and ready.');
+      connection.release();
+    }
+  });
 });

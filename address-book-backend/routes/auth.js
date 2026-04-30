@@ -211,7 +211,7 @@ router.post('/login', (req, res) => {
         email: user.email,
         company_id: user.company_id
       },
-      'SECRET_KEY',
+      process.env.JWT_SECRET || 'SECRET_KEY',
       { expiresIn: '8h' }
     );
 
@@ -245,7 +245,7 @@ router.get('/me', (req, res) => {
 
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, 'SECRET_KEY');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'SECRET_KEY');
 
     res.json({ user: decoded });
 

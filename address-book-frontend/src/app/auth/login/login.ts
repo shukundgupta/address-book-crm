@@ -122,7 +122,7 @@ export class LoginComponent implements OnInit {
         let msg = err?.error?.message || 'Login failed';
         
         if (err.status === 0) {
-          msg = 'Please start the server & npm start';
+          msg = 'Backend server is unreachable. Please ensure the CRM server is running.';
         }
 
         this.showError(msg);

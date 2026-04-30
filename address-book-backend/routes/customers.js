@@ -191,18 +191,19 @@ router.get('/stats/summary', (req, res) => {
   const query = `
     SELECT 
       COUNT(*) as total,
-      SUM(CASE WHEN customer_type='New' THEN 1 ELSE 0 END) as new_count,
-      SUM(CASE WHEN customer_type='Existing' THEN 1 ELSE 0 END) as existing_count
+      COALESCE(SUM(CASE WHEN LOWER(customer_type)='new' THEN 1 ELSE 0 END), 0) as new_count,
+      COALESCE(SUM(CASE WHEN LOWER(customer_type)='existing' THEN 1 ELSE 0 END), 0) as existing_count
     FROM customers
     WHERE company_id = ?
   `;
 
   db.query(query, [company_id], (err, result) => {
     if (err) {
-      console.error(err);
+      console.error('❌ Stats Error:', err);
       return res.status(500).json(err);
     }
 
+    console.log(`📊 Stats for Company ${company_id}:`, result[0]);
     res.json(result[0]);
   });
 

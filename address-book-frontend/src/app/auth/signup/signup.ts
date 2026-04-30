@@ -6,6 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-signup',
@@ -58,7 +59,7 @@ export class Signup {
     }
 
   this.loading = true;
-  this.http.post('http://localhost:3000/api/auth/send-otp', {
+  this.http.post(`${environment.apiUrl}/auth/send-otp`, {
     email: this.email,
     company_id: this.company_id
   }).subscribe({
@@ -156,7 +157,7 @@ export class Signup {
     }
 
     this.loading = true;
-    this.http.post('http://localhost:3000/api/auth/verify-otp', {
+    this.http.post(`${environment.apiUrl}/auth/verify-otp`, {
       email: this.email,
       otp: fullOtp
     }).subscribe({
@@ -184,7 +185,7 @@ export class Signup {
 
     // Removed otpVerified checks since verifyOtp naturally chains here 
 
-    this.http.post('http://localhost:3000/api/auth/register', {
+    this.http.post(`${environment.apiUrl}/auth/register`, {
       name: this.name,
       email: this.email,
       password: this.password,

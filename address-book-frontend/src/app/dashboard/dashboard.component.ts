@@ -7,6 +7,8 @@ import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
+import { MatSnackBar } from '@angular/material/snack-bar';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -28,7 +30,8 @@ export class DashboardComponent implements OnInit {
   constructor(
     private customerService: CustomerService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private snack: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -40,12 +43,18 @@ export class DashboardComponent implements OnInit {
   }
 
   loadStats() {
-    this.customerService.getStats().subscribe((res: any) => {
-      this.stats.total = res.total;
-      this.stats.new = res.new_count;
-      this.stats.existing = res.existing_count;
-      this.cdr.detectChanges();
-      this.createChart();
+    this.customerService.getStats().subscribe({
+      next: (res: any) => {
+        this.stats.total = res.total;
+        this.stats.new = res.new_count;
+        this.stats.existing = res.existing_count;
+        this.cdr.detectChanges();
+        this.createChart();
+      },
+      error: (err) => {
+        console.error('Dashboard Error:', err);
+        this.snack.open('Failed to load dashboard stats. Please login again.', 'OK', { duration: 3000 });
+      }
     });
   }
 

@@ -1,10 +1,12 @@
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
 const http = require('http');
+const fs = require('fs');
 
 let mainWindow;
 let backendProcess;
+const configPath = path.join(app.getPath('userData'), 'config.json');
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -14,37 +16,100 @@ function createWindow() {
     icon: path.join(__dirname, 'address-book-frontend/public/icon.png'),
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      zoomFactor: 0.9,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
   mainWindow.setMenuBarVisibility(false);
 
-  let attempts = 0;
-  const maxAttempts = 30; // 30 seconds timeout
+  /* =========================
+     ZOOM FEATURES
+  ========================= */
+  const webContents = mainWindow.webContents;
 
-  const checkBackend = () => {
-    http.get('http://localhost:3000', (res) => {
-      mainWindow.loadURL('http://localhost:3000');
-    }).on('error', () => {
-      attempts++;
-      if (attempts > maxAttempts) {
-        dialog.showErrorBox("Startup Error", "The backend server failed to start within 30 seconds. Please check if WAMP is running and port 3000 is free.");
-        return;
+  // Global Shortcuts for Zoom
+  webContents.on('before-input-event', (event, input) => {
+    if (input.control || input.meta) {
+      if (input.key === '=' || input.key === '+') {
+        webContents.setZoomFactor(Math.min(3.0, webContents.getZoomFactor() + 0.1));
+        event.preventDefault();
+      } else if (input.key === '-') {
+        webContents.setZoomFactor(Math.max(0.5, webContents.getZoomFactor() - 0.1));
+        event.preventDefault();
+      } else if (input.key === '0') {
+        webContents.setZoomFactor(1.0);
+        event.preventDefault();
       }
-      setTimeout(checkBackend, 1000);
-    });
-  };
+    }
+  });
 
-  checkBackend();
+  // Optional: Mouse Wheel Zoom (Ctrl + Scroll)
+  mainWindow.webContents.on('mouse-wheel', (event, wheel) => {
+    if (wheel.ctrlKey) {
+      const zoomFactor = webContents.getZoomFactor();
+      if (wheel.deltaY < 0) {
+        webContents.setZoomFactor(Math.min(3.0, zoomFactor + 0.05));
+      } else {
+        webContents.setZoomFactor(Math.max(0.5, zoomFactor - 0.05));
+      }
+    }
+  });
+
+  // 1. Check if config exists - if not, show setup
+  if (!fs.existsSync(configPath)) {
+    mainWindow.loadFile('setup.html');
+  } else {
+    // 2. Load Config and Start
+    try {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.mode === 'server') {
+        startBackend();
+        waitForServer('localhost');
+      } else {
+        // Client Mode - Just connect to the server IP
+        waitForServer(config.server_ip);
+      }
+    } catch (e) {
+      mainWindow.loadFile('setup.html');
+    }
+  }
 
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
 }
 
+const DEFAULT_PORT = 3000;
+
+function waitForServer(host) {
+  let attempts = 0;
+  const maxAttempts = 45; // 45 seconds for LAN discovery
+  const url = `http://${host}:${DEFAULT_PORT}`;
+
+  const check = () => {
+    http.get(url, (res) => {
+      mainWindow.loadURL(url);
+    }).on('error', (err) => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        dialog.showErrorBox("Connection Error", 
+          `Could not connect to the CRM server at ${url}.\n\n` +
+          `1. Ensure the Server PC is ON.\n` +
+          `2. Ensure the Server PC has its CRM app open.\n` +
+          `3. Check if both PCs are on the same LAN Network.`);
+        app.exit();
+        return;
+      }
+      setTimeout(check, 1000);
+    });
+  };
+
+  check();
+}
+
 function startBackend() {
-  const fs = require('fs');
   const serverPath = path.join(__dirname, 'address-book-backend/server.js');
   
   if (!fs.existsSync(serverPath)) {
@@ -53,33 +118,35 @@ function startBackend() {
   }
 
   let lastError = "";
-
   backendProcess = fork(serverPath, [], {
     cwd: path.join(__dirname, 'address-book-backend'),
-    env: { ...process.env, PORT: 3000 },
+    env: { ...process.env, PORT: DEFAULT_PORT },
     stdio: ['inherit', 'pipe', 'pipe', 'ipc']
   });
 
   backendProcess.stderr.on('data', (data) => {
     lastError += data.toString();
-    console.error(`Backend Error: ${data}`);
   });
 
-  backendProcess.on('error', (err) => {
-    dialog.showErrorBox("Backend Error", "Failed to start background process: " + err.message);
-  });
-  
   backendProcess.on('exit', (code) => {
     if (code !== 0 && code !== null) {
-      dialog.showErrorBox("Backend Crash", "The background server crashed.\n\nReason:\n" + (lastError || "Unknown error (check if port 3000 is busy)"));
+      dialog.showErrorBox("Backend Crash", `The background server crashed.\n\nReason:\n` + (lastError || `Unknown error (check if port ${DEFAULT_PORT} is busy)`));
     }
   });
 }
 
-app.on('ready', () => {
-  startBackend();
-  createWindow();
+// Handle Configuration Saving from setup.html
+ipcMain.on('save-config', (event, config) => {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config));
+    app.relaunch();
+    app.exit();
+  } catch (err) {
+    dialog.showErrorBox("Settings Error", "Failed to save settings: " + err.message);
+  }
 });
+
+app.on('ready', createWindow);
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') {

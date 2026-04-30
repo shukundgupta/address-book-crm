@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class EmailCampaignService {
 
-  private API = 'http://localhost:3000/api/email-campaigns';
+  private API = environment.apiUrl + '/email-campaigns';
 
   constructor(private http: HttpClient) {}
 

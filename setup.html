@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Address Book CRM - Setup</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .setup-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        h2 { margin-top: 0; color: #38bdf8; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 30px; }
+        .options { display: flex; flex-direction: column; gap: 15px; }
+        .btn {
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 15px;
+        }
+        .btn-server { background: #0284c7; color: white; }
+        .btn-server:hover { background: #0369a1; transform: translateY(-2px); }
+        .btn-client { background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .btn-client:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+        
+        #client-setup { display: none; margin-top: 20px; text-align: left; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            box-sizing: border-box;
+        }
+        .btn-save { background: #10b981; color: white; margin-top: 20px; width: 100%; }
+        .back-link { display: block; margin-top: 15px; font-size: 12px; color: #94a3b8; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="setup-card">
+        <h2>Welcome to CRM</h2>
+        <p>Please select the role of this computer in your office network.</p>
+        
+        <div id="main-options" class="options">
+            <button class="btn btn-server" onclick="selectRole('server')">
+                🏠 This is the SERVER PC<br>
+                <small style="font-weight: 400; opacity: 0.8;">(Stores all data and runs WAMP)</small>
+            </button>
+            <button class="btn btn-client" onclick="showClientSetup()">
+                💻 This is a CLIENT PC<br>
+                <small style="font-weight: 400; opacity: 0.8;">(Connects to the Server PC over LAN)</small>
+            </button>
+        </div>
+
+        <div id="client-setup">
+            <label>Server IP Address:</label>
+            <input type="text" id="server-ip" placeholder="e.g. 192.168.1.10">
+            <button class="btn btn-save" onclick="saveClientConfig()">Save and Connect</button>
+            <span class="back-link" onclick="showMainOptions()">← Back to options</span>
+        </div>
+    </div>
+
+    <script>
+        function selectRole(role) {
+            window.electronAPI.saveConfig({ mode: role });
+        }
+
+        function showClientSetup() {
+            document.getElementById('main-options').style.display = 'none';
+            document.getElementById('client-setup').style.display = 'block';
+        }
+
+        function showMainOptions() {
+            document.getElementById('main-options').style.display = 'flex';
+            document.getElementById('client-setup').style.display = 'none';
+        }
+
+        function saveClientConfig() {
+            const ip = document.getElementById('server-ip').value;
+            if (!ip) {
+                alert('Please enter the Server IP address');
+                return;
+            }
+            window.electronAPI.saveConfig({ mode: 'client', server_ip: ip });
+        }
+    </script>
+</body>
+</html>
